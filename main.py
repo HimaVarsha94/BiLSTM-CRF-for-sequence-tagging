@@ -1,4 +1,6 @@
 import argparse, sys
+import pickle
+import numpy as np
 
 #for preprocess the conlll2000 data into lists
 def chunking_preprocess(datafile, senna=True):
@@ -6,21 +8,28 @@ def chunking_preprocess(datafile, senna=True):
 	data = []
 	X = []
 	y = []
+	new_data = []
+	#f senna, load the pkl object
 	if senna == True:
-		senna_dict = pickle.load("./senna_embeddings/senna_obj.pkl")
+		with open("./senna_embeddings/senna_obj.pkl", "r") as pkl_obj:
+			senna_dict = pickle.load(pkl_obj)
+
 	for line in datafile:
 		line = line.strip()
 		tokens = line.split(' ')
-
 		if len(tokens) == 1:
 			counter += 1
 			X.append(new_data)
 			new_data = []
 		else:
-			new_data.append(senna_dict[tokens[0]])
+			if tokens[0] in senna_dict:
+				new_data.append(senna_dict[tokens[0]])
+			else:
+				new_data.append(np.random.rand(1,50))
 			y.append(tokens[2])
 			new_data.append((tokens[0], tokens[1], tokens[2]))
-	return X, y
+	print(counter)
+	return X, y, counter
 
 #loads and preprocess the conll data
 def load_chunking():
@@ -29,7 +38,8 @@ def load_chunking():
 
 	X_train, y_train = chunking_preprocess(train_data)
 	X_test, y_test = chunking_preprocess(test_data)
-	return training_data, testing_data
+	import pdb; pdb.set_trace()
+	return X_train, y_train, X_test, y_test
 
 def parse_arguments():
 	parser = argparse.ArgumentParser(description='Deep Q Network Argument Parser')

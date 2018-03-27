@@ -107,7 +107,7 @@ def main():
     loss_function = nn.NLLLoss()
     parameters = model.parameters()
     # parameters = filter(lambda p: model.requires_grad, model.parameters())
-    optimizer = optim.SGD(parameters(), lr=0.1)
+    optimizer = optim.SGD(parameters, lr=0.1)
 
     len_train = len(training_data)
     len_test = len(test_X)

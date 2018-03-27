@@ -24,7 +24,6 @@ class LSTMTagger(nn.Module):
                 autograd.Variable(torch.zeros(1, 1, self.hidden_dim)))
 
     def forward(self, sentence):
-        import pdb; pdb.set_trace()
         embeds = self.word_embeddings(sentence)
         lstm_out, self.hidden = self.lstm(
             embeds.view(len(sentence), 1, -1), self.hidden)

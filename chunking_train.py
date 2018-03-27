@@ -105,7 +105,6 @@ def main():
 
     model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), emb_mat)
     loss_function = nn.NLLLoss()
-    import pdb; pdb.set_trace()
     parameters = model.parameters()
     # parameters = filter(lambda p: model.requires_grad, model.parameters())
     optimizer = optim.SGD(parameters(), lr=0.1)
@@ -119,6 +118,7 @@ def main():
             sentence = training_data[ind]
             tags = y[ind]
             model.zero_grad()
+            #check this
             model.hidden = model.init_hidden()
             sentence_in = prepare_sequence(sentence, word_to_ix)
             targets = prepare_sequence(tags, tag_to_ix)

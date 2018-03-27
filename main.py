@@ -2,6 +2,14 @@ import argparse, sys
 import pickle
 import numpy as np
 
+START_TAG = "<START>"
+STOP_TAG = "<STOP>"
+
+def prepare_sequence(seq, word_embedding_dict):
+    embeddings = [word_embedding_dict[w] for w in seq]
+    tensor = torch.LongTensor(embeddings)
+    return autograd.Variable(tensor)
+
 #for preprocess the conlll2000 data into lists
 def chunking_preprocess(datafile, senna=True):
 	counter = 0
@@ -22,23 +30,24 @@ def chunking_preprocess(datafile, senna=True):
 			X.append(new_data)
 			new_data = []
 		else:
-			if tokens[0] in senna_dict:
-				new_data.append(senna_dict[tokens[0]])
-			else:
-				new_data.append(np.random.rand(1,50))
+			new_data.append(tokens[0])
 			y.append(tokens[2])
-			new_data.append((tokens[0], tokens[1], tokens[2]))
 	print(counter)
 	return X, y, counter
 
 #loads and preprocess the conll data
+
+def train():
+	X, y, test_X, test_y = load_chunking()
+	import pdb; pdb.set_trace()
+	return
+
 def load_chunking():
 	train_data = open('./data/conll2000/train.txt')
 	test_data = open('./data/conll2000/test.txt')
 
 	X_train, y_train = chunking_preprocess(train_data)
 	X_test, y_test = chunking_preprocess(test_data)
-	import pdb; pdb.set_trace()
 	return X_train, y_train, X_test, y_test
 
 def parse_arguments():
@@ -46,6 +55,7 @@ def parse_arguments():
 	parser.add_argument("--d", dest="dataset", default=1, help="POS(0), CONLL2000(1), CONLL2003(2)", type=int)
 	parser.add_argument("--v", dest="verbose", default=1, help="verbose", type=int)
 	return parser.parse_args()
+
 
 def main(args):
 	if args.dataset == 1:

@@ -1,2 +1,4 @@
 data/
 senna_embeddings/
+chunking_models/
+.DS_Store

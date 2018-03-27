@@ -10,9 +10,10 @@ class LSTMTagger(nn.Module):
         super(LSTMTagger, self).__init__()
         self.hidden_dim = hidden_dim
         self.word_embeddings = nn.Embedding(vocab_size, embedding_dim)
+        # self.word_embeddings.weight.requires_grad = False
         print("Entered!!!!")
-        if pretrained_weight_embeddings != None:
-            self.word_embeddings.weight.data.copy_(torch.from_numpy(pretrained_weight_embeddings))
+        # if pretrained_weight_embeddings != None:
+        self.word_embeddings.weight.data.copy_(torch.from_numpy(pretrained_weight_embeddings))
 
         self.lstm = nn.LSTM(embedding_dim, hidden_dim)
         self.hidden2tag = nn.Linear(hidden_dim, tagset_size)
@@ -23,6 +24,7 @@ class LSTMTagger(nn.Module):
                 autograd.Variable(torch.zeros(1, 1, self.hidden_dim)))
 
     def forward(self, sentence):
+        import pdb; pdb.set_trace()
         embeds = self.word_embeddings(sentence)
         lstm_out, self.hidden = self.lstm(
             embeds.view(len(sentence), 1, -1), self.hidden)

@@ -1,4 +1,6 @@
-data/
-senna_embeddings/
-chunking_models/
+data/*
+senna_embeddings/*
+chunking_models/*
 .DS_Store
+
+__pycache__/*

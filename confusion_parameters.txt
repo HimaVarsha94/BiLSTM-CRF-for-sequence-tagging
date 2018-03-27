@@ -1,0 +1,4 @@
+Should we use start of the sentence?
+Unknown words handling
+Lowercase words
+Learning embeddings on the fly also

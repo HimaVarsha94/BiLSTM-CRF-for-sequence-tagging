@@ -16,8 +16,11 @@ def senna():
 		nums = np.array(nums)
 		senna_dict[senna_words_list[ind]] = nums
 		ind += 1
-	with open( 'senna_obj.pkl', 'w') as f:
+	with open('./senna_embeddings/senna_obj.pkl', 'w') as f:
 		pickle.dump(senna_dict, f)
+
+def senna_embeddings_matrix():
+	#made for connll dataset
 
 def main():
 	senna()

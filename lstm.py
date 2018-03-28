@@ -20,9 +20,10 @@ class LSTMTagger(nn.Module):
         # if pretrained_weight_embeddings != None:
         self.word_embeddings.weight.data.copy_(torch.from_numpy(pretrained_weight_embeddings))
 
-        self.lstm = nn.LSTM(embedding_dim, hidden_dim, bidirectional=BIDIRECTIONAL)
-
         self.bidirectional = BIDIRECTIONAL
+
+        self.lstm = nn.LSTM(embedding_dim, (hidden_dim//2 if self.bidirectional else hidden_dim), self.bidirectional)
+
         self.use_bigram = USE_BIGRAM
         self.hidden = self.init_hidden()
         if self.use_bigram:

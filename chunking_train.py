@@ -73,7 +73,6 @@ def chunking_preprocess(datafile, senna=True):
             new_data.append(tokens[0])
             new_label.append(tokens[2])
     print(counter)
-    print("Example line of training data and Y\n\n" + str(X[0]) + " \n\n" + str(y[0]) + "\n")
     return X, y
 
 
@@ -91,7 +90,7 @@ def load_chunking(train=False, test=False):
     pdb.set_trace()
 
 
-def tag_indices(y):
+def tag_indices(X, y):
     tag_to_idx = {}
     for sent_tag in y:
         for tag in sent_tag:
@@ -114,14 +113,14 @@ def main():
 
     training_data, y = load_chunking(train=True)
     test_X, test_y = load_chunking(test=True)
-    emb_mat, word_to_ix = get_embeddings_matrix(training_data, USE_BIGRAM)
-
-    tag_to_ix = tag_indices(y)
-
+    emb_mat, word_to_ix = get_embeddings_matrix(training_data)
+    tag_to_ix = tag_indices(training_data, y)
 
 
-    model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), emb_mat, USE_CRF, BIDIRECTIONAL)
+    EMBEDDING_DIM = 50
+    HIDDEN_DIM = 300
 
+    model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), emb_mat)
     loss_function = nn.NLLLoss()
     parameters = model.parameters()
     # parameters = filter(lambda p: model.requires_grad, model.parameters())
@@ -141,6 +140,7 @@ def main():
             sentence_in = prepare_sequence(sentence, word_to_ix)
             targets = prepare_sequence(tags, tag_to_ix)
             tag_scores = model(sentence_in)
+            model.forward_backward(tag_scores.data.numpy(), len(sentence))
             import pdb; pdb.set_trace()
             loss = loss_function(tag_scores, targets)
             loss_cal += loss

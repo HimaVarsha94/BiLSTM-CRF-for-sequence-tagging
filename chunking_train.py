@@ -123,6 +123,7 @@ def main():
             sentence_in = prepare_sequence(sentence, word_to_ix)
             targets = prepare_sequence(tags, tag_to_ix)
             tag_scores = model(sentence_in)
+            import pdb; pdb.set_trace()
             loss = loss_function(tag_scores, targets)
             loss_cal += loss
             loss.backward()

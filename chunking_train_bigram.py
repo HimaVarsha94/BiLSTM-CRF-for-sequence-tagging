@@ -1,4 +1,5 @@
 import nltk
+import re
 import numpy as np, pickle
 import torch
 import torch.autograd as autograd
@@ -94,6 +95,37 @@ def prepare_bigram(seq, bigram_to_ix, bigram_size, USE_HASHING=False, vectorizer
     return autograd.Variable(tensor)
 
 
+def prepare_spelling(seq, SPELLING_SIZE=7):
+    values = []
+
+    for w in seq:
+        value=np.zeros(SPELLING_SIZE)
+        for i in range(SPELLING_SIZE):
+            if i==0:
+                value[i]=(1 if (w[0]>='A' and w[0]<='Z') else 0)
+                continue
+            elif i==1:
+                value[i]=(1 if w.upper()==w else 0)
+                continue
+            elif i==2:
+                value[i]=(1 if w.lower()==w else 0)
+                continue
+            elif i==3:
+                value[i]=(1 if w[1:].upper()!=w[1:] else 0)
+                continue
+            elif i==4:
+                value[i]=(1 if any(char.isdigit() for char in w) else 0)
+                continue
+            elif i==5:
+                value[i]=(0 if re.match("^[a-zA-Z0-9]*$", w) else 1)
+                continue
+            elif i==6:
+                value[i]=(0 if w.replace("'", "")==w else 1)
+        values.append(value)
+    tensor = torch.FloatTensor(values).squeeze(1)
+    return autograd.Variable(tensor)
+
+
 def chunking_preprocess(datafile, senna=True):
     counter = 0
     data = []
@@ -154,6 +186,9 @@ def main():
     USE_HASHING = True
     HASHING_SIZE = 20
 
+    USE_SPELLING = True
+    SPELLING_SIZE = 7
+
     if USE_HASHING:
         vectorizer = FeatureHasher(n_features=HASHING_SIZE)
 
@@ -165,7 +200,7 @@ def main():
     tag_to_ix = tag_indices(y)
 
     model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), emb_mat, USE_CRF, BIDIRECTIONAL,
-                       USE_BIGRAM, bigram_size)
+                       USE_BIGRAM, bigram_size, USE_SPELLING, SPELLING_SIZE)
 
     loss_function = nn.NLLLoss()
     parameters = model.parameters()
@@ -186,13 +221,18 @@ def main():
             model.hidden = model.init_hidden()
             sentence_in = prepare_sequence(sentence, word_to_ix)
             targets = prepare_sequence(tags, tag_to_ix)
+
+            bigram_one_hot = None
+
             if USE_BIGRAM:
                 bigram_one_hot = prepare_bigram(sentence, bigram_to_ix, bigram_size, USE_HASHING, vectorizer)
-                tag_scores = model(sentence_in, bigram_one_hot)
-            else:
-                bigram_one_hot = None
-                tag_scores = model(sentence_in)
 
+            spelling_one_hot = None
+
+            if USE_SPELLING:
+                spelling_one_hot = prepare_spelling(sentence, SPELLING_SIZE)
+
+            tag_scores = model(sentence_in, bigram_one_hot, spelling_one_hot)
 
             loss = loss_function(tag_scores, targets)
             loss_cal += loss
@@ -213,12 +253,17 @@ def main():
             sentence_in = prepare_sequence(sentence, word_to_ix)
             targets = prepare_sequence(tags, tag_to_ix)
 
+            bigram_one_hot = None
+
             if USE_BIGRAM:
                 bigram_one_hot = prepare_bigram(sentence, bigram_to_ix, bigram_size, USE_HASHING, vectorizer)
-                tag_scores = model(sentence_in, bigram_one_hot)
-            else:
-                bigram_one_hot = None
-                tag_scores = model(sentence_in)
+
+            spelling_one_hot = None
+
+            if USE_SPELLING:
+                spelling_one_hot = prepare_spelling(sentence)
+
+            tag_scores = model(sentence_in, bigram_one_hot, spelling_one_hot)
 
             prob, predicted = torch.max(tag_scores.data, 1)
             correct += (predicted == targets.data).sum()

@@ -5,10 +5,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from lstm import LSTMTagger
+
 torch.manual_seed(1)
 
+
 def get_embeddings_matrix(data):
-    word_to_ix = {'unk':0}
+    word_to_ix = {'unk': 0}
     for sent in data:
         for word in sent:
             word = word.lower()
@@ -17,11 +19,11 @@ def get_embeddings_matrix(data):
 
     with open('./chunking_models/word_to_ix.pkl', 'wb') as f:
         pickle.dump(word_to_ix, f)
-        
-    #this contains a list of all senna obj embeddings
+
+    # this contains a list of all senna obj embeddings
     with open('./senna_embeddings/senna_obj.pkl', 'rb') as f:
         senna_obj = pickle.load(f)
-    #embeddings matrix with each row corresponding to a word to pass to nn.embedding layer
+    # embeddings matrix with each row corresponding to a word to pass to nn.embedding layer
     embeddings_mat = np.zeros((len(word_to_ix), 50))
 
     for word in word_to_ix:
@@ -33,7 +35,8 @@ def get_embeddings_matrix(data):
     with open('./chunking_models/conll2000_matrix', 'wb') as f:
         pickle.dump(embeddings_mat, f)
 
-    print("shape of emb_mat " + str(embeddings_mat.shape) + " word_to_ix is a dict of size "+str(len(word_to_ix.keys())))
+    print("shape of emb_mat " + str(embeddings_mat.shape) + " word_to_ix is a dict of size " + str(
+        len(word_to_ix.keys())))
 
     return embeddings_mat, word_to_ix
 
@@ -49,6 +52,7 @@ def prepare_sequence(seq, to_ix):
     tensor = torch.LongTensor(idxs)
     return autograd.Variable(tensor)
 
+
 def chunking_preprocess(datafile, senna=True):
     counter = 0
     data = []
@@ -60,7 +64,7 @@ def chunking_preprocess(datafile, senna=True):
         counter += 1
         line = line.strip()
         tokens = line.split(' ')
-        if len(tokens) == 1: 
+        if len(tokens) == 1:
             X.append(new_data)
             y.append(new_label)
             new_data = []
@@ -72,6 +76,7 @@ def chunking_preprocess(datafile, senna=True):
     print("Example line of training data and Y\n\n" + str(X[0]) + " \n\n" + str(y[0]) + "\n")
     return X, y
 
+
 def load_chunking(train=False, test=False):
     if train == True:
         train_data = open('./data/conll2000/train.txt')
@@ -82,7 +87,9 @@ def load_chunking(train=False, test=False):
         test_data = open('./data/conll2000/test.txt')
         X_test, y_test = chunking_preprocess(test_data)
         return X_test, y_test
-    import pdb; pdb.set_trace()
+    import pdb;
+    pdb.set_trace()
+
 
 def tag_indices(y):
     tag_to_idx = {}
@@ -96,6 +103,7 @@ def tag_indices(y):
         pickle.dump(tag_to_idx, f)
     return tag_to_idx
 
+
 def main():
     training_data, y = load_chunking(train=True)
     test_X, test_y = load_chunking(test=True)
@@ -104,10 +112,12 @@ def main():
     tag_to_ix = tag_indices(y)
 
     EMBEDDING_DIM = 50
-    HIDDEN_DIM = 300
-    USE_CRF=False
+    HIDDEN_DIM = 300  # the dimension for single direction
+    USE_CRF = False
+    BIDIRECTIONAL = True
 
-    model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), emb_mat, USE_CRF)
+    model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), emb_mat, USE_CRF, BIDIRECTIONAL)
+
     loss_function = nn.NLLLoss()
     parameters = model.parameters()
     # parameters = filter(lambda p: model.requires_grad, model.parameters())
@@ -122,7 +132,7 @@ def main():
             sentence = training_data[ind]
             tags = y[ind]
             model.zero_grad()
-            #check this
+            # check this
             model.hidden = model.init_hidden()
             sentence_in = prepare_sequence(sentence, word_to_ix)
             targets = prepare_sequence(tags, tag_to_ix)
@@ -132,7 +142,7 @@ def main():
             loss.backward()
 
             optimizer.step()
-        PATH = './chunking_models/model_epoch'+str(epoch)
+        PATH = './chunking_models/model_epoch' + str(epoch)
         torch.save(model.state_dict(), PATH)
         model.load_state_dict(torch.load(PATH))
 
@@ -150,7 +160,7 @@ def main():
             correct += (predicted == targets.data).sum()
             total += targets.size(0)
             loss = loss_function(tag_scores, targets)
-        print("Accuracy of epoch {} is {}".format(epoch, float(correct)/total))
+        print("Accuracy of epoch {} is {}".format(epoch, float(correct) / total))
 
 
 if __name__ == '__main__':

@@ -15,11 +15,11 @@ class LSTMTagger(nn.Module):
         self.hidden_dim = hidden_dim
         self.word_embeddings = nn.Embedding(vocab_size, embedding_dim)
         # self.word_embeddings.weight.requires_grad = False
-        print("Entered!!!!")
+        # print("Entered!!!!")
         # if pretrained_weight_embeddings != None:
         self.word_embeddings.weight.data.copy_(torch.from_numpy(pretrained_weight_embeddings))
 
-        self.lstm = nn.LSTM(embedding_dim, hidden_dim // 2, bidirectional=BIDIRECTIONAL)
+        self.lstm = nn.LSTM(embedding_dim, hidden_dim, bidirectional=BIDIRECTIONAL)
 
         self.bidirectional = BIDIRECTIONAL
         self.append_bigram = USE_BIGRAM
@@ -104,6 +104,9 @@ class LSTMTagger(nn.Module):
                         # some places say that state_probs and beta should be j+1
                         epsilon[t][i][j] = alpha[t-1][j] * self.trans_mat[i][j] * state_probs[t][j] * beta[t][i]
 
+        return epsilon
+
+    def update_crf(self, epsilon, sent_len):
         # update transition matrix
         for i in range(self.tagset_size):
             for t in range(sent_len):

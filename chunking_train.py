@@ -72,7 +72,7 @@ def chunking_preprocess(datafile, senna=True):
         else:
             new_data.append(tokens[0])
             new_label.append(tokens[2])
-    print(counter)
+    # print(counter)
     return X, y
 
 
@@ -106,14 +106,14 @@ def tag_indices(X, y):
 def main():
     EMBEDDING_DIM = 50
     HIDDEN_DIM = 300  # the dimension for single direction
-    USE_CRF = False
+    USE_CRF = True
     BIDIRECTIONAL = True
     USE_BIGRAM = False
 
 
     training_data, y = load_chunking(train=True)
     test_X, test_y = load_chunking(test=True)
-    emb_mat, word_to_ix = get_embeddings_matrix(training_data)
+    emb_mat, word_to_ix = get_embeddings_matrix(training_data,USE_BIGRAM)
     tag_to_ix = tag_indices(training_data, y)
 
 
@@ -130,7 +130,7 @@ def main():
     len_test = len(test_X)
     for epoch in range(50):
         loss_cal = 0.0
-        print(epoch)
+        print('Epoch: {}'.format(epoch))
         for ind in range(len_train):
             sentence = training_data[ind]
             tags = y[ind]
@@ -140,11 +140,14 @@ def main():
             sentence_in = prepare_sequence(sentence, word_to_ix)
             targets = prepare_sequence(tags, tag_to_ix)
             tag_scores = model(sentence_in)
-            model.forward_backward(tag_scores.data.numpy(), len(sentence))
-            import pdb; pdb.set_trace()
+            if USE_CRF:
+                epsilon = model.forward_backward(tag_scores.data.numpy(), len(sentence))
+            # import pdb; pdb.set_trace()
             loss = loss_function(tag_scores, targets)
             loss_cal += loss
             loss.backward()
+            if USE_CRF:
+                model.update_crf(epsilon,len(sentence))
 
             optimizer.step()
         PATH = './chunking_models/model_epoch' + str(epoch)

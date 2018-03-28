@@ -1,3 +1,4 @@
+import nltk
 import numpy as np, pickle
 import torch
 import torch.autograd as autograd
@@ -9,7 +10,7 @@ from lstm import LSTMTagger
 torch.manual_seed(1)
 
 
-def get_embeddings_matrix(data,USE_BIGRAM):
+def get_embeddings_matrix(data, USE_BIGRAM):
     word_to_ix = {'unk': 0}
     for sent in data:
         for word in sent:
@@ -38,7 +39,24 @@ def get_embeddings_matrix(data,USE_BIGRAM):
     print("shape of emb_mat " + str(embeddings_mat.shape) + " word_to_ix is a dict of size " + str(
         len(word_to_ix.keys())))
 
-    return embeddings_mat, word_to_ix
+    bigram_to_ix = {}
+    if USE_BIGRAM:
+
+        for sent in data:
+
+            bi_grams = nltk.bigrams(["<s>"] + sent)
+
+            # bigrams added to the dictionary
+            for grams in bi_grams:
+                bigram = grams[0] + '|' + grams[1]
+                if bigram not in bigram_to_ix:
+                    bigram_to_ix[bigram] = len(bigram_to_ix)
+
+        with open('./chunking_models/bigram_to_ix.pkl', 'wb') as f:
+            pickle.dump(bigram_to_ix, f)
+        print("total bigram size is " + str(len(bigram_to_ix)))
+
+    return embeddings_mat, word_to_ix, bigram_to_ix, len(bigram_to_ix)
 
 
 def prepare_sequence(seq, to_ix):
@@ -50,6 +68,22 @@ def prepare_sequence(seq, to_ix):
         else:
             idxs.append(0)
     tensor = torch.LongTensor(idxs)
+    return autograd.Variable(tensor)
+
+
+def prepare_onehot(seq, bigram_to_ix, bigram_size):
+    # tensor=torch.LongTensor(len(seq)).zero_()
+    values = []
+    bi_grams = nltk.bigrams(["<s>"] + seq)
+    for grams in bi_grams:
+        bigram = grams[0] + '|' + grams[1]
+        value = np.zeros(bigram_size)
+        if bigram in bigram_to_ix:
+            value[bigram_to_ix[bigram]] = 1
+        values.append(value)
+    tensor = torch.FloatTensor(values)
+    # print(tensor.shape)
+    # print("does it matches sequence length " + str(len(seq)))
     return autograd.Variable(tensor)
 
 
@@ -111,16 +145,14 @@ def main():
     BIDIRECTIONAL = True
     USE_BIGRAM = False
 
-
     training_data, y = load_chunking(train=True)
     test_X, test_y = load_chunking(test=True)
-    emb_mat, word_to_ix = get_embeddings_matrix(training_data, USE_BIGRAM)
+    emb_mat, word_to_ix, bigram_to_ix, bigram_size = get_embeddings_matrix(training_data, USE_BIGRAM)
 
     tag_to_ix = tag_indices(y)
 
-
-
-    model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), emb_mat, USE_CRF, BIDIRECTIONAL)
+    model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), emb_mat, USE_CRF, BIDIRECTIONAL,
+                       USE_BIGRAM, bigram_size)
 
     loss_function = nn.NLLLoss()
     parameters = model.parameters()
@@ -134,13 +166,18 @@ def main():
         print(epoch)
         for ind in range(len_train):
             sentence = training_data[ind]
+            print(len(sentence))
             tags = y[ind]
             model.zero_grad()
             # check this
             model.hidden = model.init_hidden()
             sentence_in = prepare_sequence(sentence, word_to_ix)
+            if USE_BIGRAM:
+                bigram_one_hot = prepare_onehot(sentence, bigram_to_ix, bigram_size)
+            else:
+                bigram_one_hot=None
             targets = prepare_sequence(tags, tag_to_ix)
-            tag_scores = model(sentence_in)
+            tag_scores = model(sentence_in, bigram_one_hot)
             loss = loss_function(tag_scores, targets)
             loss_cal += loss
             loss.backward()

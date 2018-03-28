@@ -6,11 +6,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from lstm import LSTMTagger
+from sklearn.feature_extraction.text import HashingVectorizer
+from sklearn.feature_extraction import FeatureHasher
 
 torch.manual_seed(1)
 
 
-def get_embeddings_matrix(data, USE_BIGRAM):
+def get_embeddings_matrix(data, USE_BIGRAM, USE_HASHING=False, HASHING_SIZE=20):
     word_to_ix = {'unk': 0}
     for sent in data:
         for word in sent:
@@ -40,7 +42,7 @@ def get_embeddings_matrix(data, USE_BIGRAM):
         len(word_to_ix.keys())))
 
     bigram_to_ix = {}
-    if USE_BIGRAM:
+    if USE_BIGRAM and not USE_HASHING:
 
         for sent in data:
 
@@ -55,6 +57,8 @@ def get_embeddings_matrix(data, USE_BIGRAM):
         with open('./chunking_models/bigram_to_ix.pkl', 'wb') as f:
             pickle.dump(bigram_to_ix, f)
         print("total bigram size is " + str(len(bigram_to_ix)))
+    if USE_HASHING:
+        return embeddings_mat, word_to_ix, bigram_to_ix, HASHING_SIZE
 
     return embeddings_mat, word_to_ix, bigram_to_ix, len(bigram_to_ix)
 
@@ -71,18 +75,21 @@ def prepare_sequence(seq, to_ix):
     return autograd.Variable(tensor)
 
 
-def prepare_onehot(seq, bigram_to_ix, bigram_size):
+def prepare_bigram(seq, bigram_to_ix, bigram_size, USE_HASHING=False, vectorizer=None):
     # tensor=torch.LongTensor(len(seq)).zero_()
     values = []
     bi_grams = nltk.bigrams(["<s>"] + seq)
     for grams in bi_grams:
         bigram = grams[0] + '|' + grams[1]
-        value = np.zeros(bigram_size)
-        if bigram in bigram_to_ix:
-            value[bigram_to_ix[bigram]] = 1
-        values.append(value)
-    tensor = torch.FloatTensor(values)
-    # print(tensor.shape)
+        if not USE_HASHING:
+            value = np.zeros(bigram_size)
+            if bigram in bigram_to_ix:
+                value[bigram_to_ix[bigram]] = 1
+            values.append(value)
+        else:
+            values.append(vectorizer.transform([{bigram: 1}]).toarray())
+    tensor = torch.FloatTensor(values).squeeze(1)
+    # print("bigram feature vector " + str(tensor.shape))
     # print("does it matches sequence length " + str(len(seq)))
     return autograd.Variable(tensor)
 
@@ -143,11 +150,17 @@ def main():
     HIDDEN_DIM = 300  # the dimension for single direction
     USE_CRF = False
     BIDIRECTIONAL = True
-    USE_BIGRAM = False
+    USE_BIGRAM = True
+    USE_HASHING = True
+    HASHING_SIZE = 20
+
+    if USE_HASHING:
+        vectorizer = FeatureHasher(n_features=HASHING_SIZE)
 
     training_data, y = load_chunking(train=True)
     test_X, test_y = load_chunking(test=True)
-    emb_mat, word_to_ix, bigram_to_ix, bigram_size = get_embeddings_matrix(training_data, USE_BIGRAM)
+    emb_mat, word_to_ix, bigram_to_ix, bigram_size = get_embeddings_matrix(training_data, USE_BIGRAM, USE_HASHING,
+                                                                           HASHING_SIZE)
 
     tag_to_ix = tag_indices(y)
 
@@ -166,18 +179,21 @@ def main():
         print(epoch)
         for ind in range(len_train):
             sentence = training_data[ind]
-            print(len(sentence))
+            # print("sentence sequence len"+str(len(sentence)))
             tags = y[ind]
             model.zero_grad()
             # check this
             model.hidden = model.init_hidden()
             sentence_in = prepare_sequence(sentence, word_to_ix)
-            if USE_BIGRAM:
-                bigram_one_hot = prepare_onehot(sentence, bigram_to_ix, bigram_size)
-            else:
-                bigram_one_hot=None
             targets = prepare_sequence(tags, tag_to_ix)
-            tag_scores = model(sentence_in, bigram_one_hot)
+            if USE_BIGRAM:
+                bigram_one_hot = prepare_bigram(sentence, bigram_to_ix, bigram_size, USE_HASHING, vectorizer)
+                tag_scores = model(sentence_in, bigram_one_hot)
+            else:
+                bigram_one_hot = None
+                tag_scores = model(sentence_in)
+
+
             loss = loss_function(tag_scores, targets)
             loss_cal += loss
             loss.backward()
@@ -196,7 +212,14 @@ def main():
             tags = test_y[ind]
             sentence_in = prepare_sequence(sentence, word_to_ix)
             targets = prepare_sequence(tags, tag_to_ix)
-            tag_scores = model(sentence_in)
+
+            if USE_BIGRAM:
+                bigram_one_hot = prepare_bigram(sentence, bigram_to_ix, bigram_size, USE_HASHING, vectorizer)
+                tag_scores = model(sentence_in, bigram_one_hot)
+            else:
+                bigram_one_hot = None
+                tag_scores = model(sentence_in)
+
             prob, predicted = torch.max(tag_scores.data, 1)
             correct += (predicted == targets.data).sum()
             total += targets.size(0)

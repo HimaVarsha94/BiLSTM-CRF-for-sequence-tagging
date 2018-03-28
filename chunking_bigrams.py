@@ -60,7 +60,6 @@ def get_embeddings_matrix(data):
 
     return embeddings_mat, word_to_ix
 
-
 def prepare_sequence(sent, to_ix):
     idxs = []
     sent = [word.lower() for word in sent]

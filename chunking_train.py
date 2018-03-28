@@ -155,7 +155,7 @@ def main():
         model.load_state_dict(torch.load(PATH))
 
         print(loss_cal)
-        print("Testing!!")
+        print("Finished one epoch and Testing!!")
         correct = 0
         total = 0
         for ind in range(len_test):
@@ -167,9 +167,8 @@ def main():
             prob, predicted = torch.max(tag_scores.data, 1)
             correct += (predicted == targets.data).sum()
             total += targets.size(0)
-            loss = loss_function(tag_scores, targets)
+            # loss = loss_function(tag_scores, targets)
         print("Accuracy of epoch {} is {}".format(epoch, float(correct) / total))
-
 
 if __name__ == '__main__':
     main()

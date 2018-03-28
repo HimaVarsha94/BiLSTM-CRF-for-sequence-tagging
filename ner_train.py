@@ -128,7 +128,6 @@ def main():
             targets = prepare_sequence(tags, tag_to_ix)
             tag_scores = model(sentence_in)
             loss = loss_function(tag_scores, targets)
-            import pdb; pdb.set_trace()
             loss_cal += loss
             loss.backward()
 

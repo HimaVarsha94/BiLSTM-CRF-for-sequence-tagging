@@ -115,7 +115,7 @@ def char_dict(data):
 
     with open('./chunking_models/char_to_ix.pkl', 'wb') as f:
         pickle.dump(char_to_ix, f)
-        
+
     return char_to_ix
 
 def main():
@@ -159,14 +159,10 @@ def main():
             sentence_in = prepare_sequence(sentence, word_to_ix)
             targets = prepare_sequence(tags, tag_to_ix)
             tag_scores = model(sentence_in)
-            if USE_CRF:
-                epsilon = model.forward_backward(tag_scores.data.numpy(), len(sentence))
             # import pdb; pdb.set_trace()
             loss = loss_function(tag_scores, targets)
             loss_cal += loss
             loss.backward()
-            if USE_CRF:
-                model.update_crf(epsilon,len(sentence))
 
             optimizer.step()
         PATH = './chunking_models/model_epoch' + str(epoch)

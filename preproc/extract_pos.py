@@ -2,7 +2,7 @@ import os
 import pickle
 
 def get_contents(ind, pos):
-	added_path = "./data/pos/penntree/"
+	added_path = "../data/pos/penntree/"
 	path = added_path+str(ind)+"/"
 	files = os.listdir(path)
 	X = []
@@ -10,7 +10,7 @@ def get_contents(ind, pos):
 	counter = 0
 	for file in files:
 		with open(path+"/"+file) as f:
-			
+
 			for line in f:
 				sent = []
 				y = []
@@ -28,7 +28,7 @@ def get_contents(ind, pos):
 
 def main():
 	pos = []
-	with open("./data/all_pos") as f:
+	with open("../data/all_pos") as f:
 		for line in f:
 			pos.append(line.split('\t')[1])
 
@@ -49,13 +49,13 @@ def main():
 		test_data = test_data + get_contents(ind, pos)[0]
 		test_labels = test_labels + get_contents(ind, pos)[1]
 
-	with open('./data/pos/train.txt', 'wb') as f:
+	with open('../data/pos/train.txt', 'wb') as f:
 		pickle.dump(train_data, f)
-	with open('./data/pos/train_labels.txt', 'wb') as f:
+	with open('../data/pos/train_labels.txt', 'wb') as f:
 		pickle.dump(train_labels, f)
-	with open('./data/pos/test.txt', 'wb') as f:
+	with open('../data/pos/test.txt', 'wb') as f:
 		pickle.dump(test_data, f)
-	with open('./data/pos/test_labels.txt', 'wb') as f:
+	with open('../data/pos/test_labels.txt', 'wb') as f:
 		pickle.dump(test_labels, f)
 	return
 

@@ -4,7 +4,7 @@ import pickle
 X = []
 y = []
 user = 0
-with open('./data/duolingo/en_es.slam.20171218.train', 'r') as f:
+with open('../data/duolingo/en_es.slam.20171218.train', 'r') as f:
 	sent = []
 	for line in f:
 		tokens = line.split()
@@ -16,9 +16,9 @@ with open('./data/duolingo/en_es.slam.20171218.train', 'r') as f:
 			sent.append(tokens[1])
 			y.append(int(tokens[-1]))
 
-with open('./data/duolingo/data.txt', 'wb') as f:
+with open('../data/duolingo/data.txt', 'wb') as f:
 	pickle.dump(X, f)
 
-with open('./data/duolingo/data_labels.txt', 'wb') as f:
+with open('../data/duolingo/data_labels.txt', 'wb') as f:
 	pickle.dump(y, f)
 import pdb; pdb.set_trace()

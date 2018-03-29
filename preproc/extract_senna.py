@@ -2,8 +2,8 @@ import pickle
 import numpy as np
 
 def senna():
-	emb = open('./senna_embeddings/embeddings.txt')
-	words = open('./senna_embeddings/words.lst')
+	emb = open('../senna_embeddings/embeddings.txt')
+	words = open('../senna_embeddings/words.lst')
 	senna_dict = {}
 	senna_words_list = []
 
@@ -16,7 +16,7 @@ def senna():
 		nums = np.array(nums)
 		senna_dict[senna_words_list[ind]] = nums
 		ind += 1
-	with open('./senna_embeddings/senna_obj.pkl', 'w') as f:
+	with open('../senna_embeddings/senna_obj.pkl', 'w') as f:
 		pickle.dump(senna_dict, f)
 
 def senna_embeddings_matrix():

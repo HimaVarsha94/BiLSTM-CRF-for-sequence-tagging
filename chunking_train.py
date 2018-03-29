@@ -4,7 +4,7 @@ import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from lstm import LSTMTagger
+from models.lstm import LSTMTagger
 # from lstm_cnn import BILSTM_CNN
 torch.manual_seed(1)
 

@@ -6,7 +6,7 @@ import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from lstm import LSTMTagger
+from models.lstm import LSTMTagger
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.feature_extraction import FeatureHasher
 

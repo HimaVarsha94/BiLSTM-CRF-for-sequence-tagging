@@ -5,7 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from lstm import LSTMTagger
-
+from lstm_cnn import BILSTM_CNN
+import tensorflow.python.ops.gen_array_ops
 torch.manual_seed(1)
 
 
@@ -104,23 +105,41 @@ def tag_indices(y):
     return tag_to_idx
 
 
+def char_dict(data):
+    char_to_ix = {}
+    for sent in data:
+        for word in sent:
+            word = word.lower()
+            for character in word:
+                if character not in char_to_ix:
+                    char_to_ix[word] = len(char_to_ix)
+
+    with open('./chunking_models/char_to_ix.pkl', 'wb') as f:
+        pickle.dump(char_to_ix, f)
+        
+    return char_to_ix
+
 def main():
     EMBEDDING_DIM = 50
     HIDDEN_DIM = 300  # the dimension for single direction
     USE_CRF = False
     BIDIRECTIONAL = True
     USE_BIGRAM = False
-
+    CNN = True
+    batch_size = 2
 
     training_data, y = load_chunking(train=True)
     test_X, test_y = load_chunking(test=True)
     emb_mat, word_to_ix = get_embeddings_matrix(training_data, USE_BIGRAM)
-
     tag_to_ix = tag_indices(y)
 
+    char_to_ix = char_dict(training_data)
+    if CNN == False:
+        model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), emb_mat, USE_CRF, BIDIRECTIONAL)
+    else:
 
-
-    model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), emb_mat, USE_CRF, BIDIRECTIONAL)
+        import pdb; pdb.set_trace()
+        model = BILSTM_CNN(len(word_to_ix), len(tag_to_ix), len(char_to_ix),EMBEDDING_DIM, HIDDEN_DIM, emb_mat, CNN=True)
 
     loss_function = nn.NLLLoss()
     parameters = model.parameters()
@@ -137,11 +156,22 @@ def main():
             tags = y[ind]
             model.zero_grad()
             # check this
-            model.hidden = model.init_hidden()
-            sentence_in = prepare_sequence(sentence, word_to_ix)
-            targets = prepare_sequence(tags, tag_to_ix)
-            tag_scores = model(sentence_in)
-            import pdb; pdb.set_trace()
+            model.hidden = model.init_hidden(batch_size)
+            sentence_in = []
+            sentence_in.append(prepare_sequence(sentence, word_to_ix))
+            # sentence_in = prepare_sequence(sentence, word_to_ix)
+            # sentence_in2 = prepare_sequence(sentence, word_to_ix)
+            targets = []
+            targets.append(prepare_sequence(tags, tag_to_ix))
+            targets.append(prepare_sequence(tags, tag_to_ix))
+            # targets2 = prepare_sequence(tags, tag_to_ix)
+
+            if CNN:
+                import pdb; pdb.set_trace()
+                sent = np.array(sentence_in)
+                tag_scores=model.get_bilstm_out(sent)
+            else:
+                tag_scores = model(sentence_in)
             loss = loss_function(tag_scores, targets)
             loss_cal += loss
             loss.backward()

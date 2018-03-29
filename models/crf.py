@@ -25,10 +25,6 @@ class CRF(nn.Module):
             init_trans = init_trans.cuda
         self.trans = nn.Parameter(init_trans)
 
-    # not sure i need this
-    def init_hidden(self):
-        pass
-
     def forward_alg(self, feats):
         # init alphas
         init_alpha = torch.Tensor(1,self.num_tags+2).fill_(MIN_VAL)

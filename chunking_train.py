@@ -5,8 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from lstm import LSTMTagger
-from lstm_cnn import BILSTM_CNN
-import tensorflow.python.ops.gen_array_ops
+# from lstm_cnn import BILSTM_CNN
 torch.manual_seed(1)
 
 
@@ -91,7 +90,7 @@ def load_chunking(train=False, test=False):
     pdb.set_trace()
 
 
-def tag_indices(X, y):
+def tag_indices(y):
     tag_to_idx = {}
     for sent_tag in y:
         for tag in sent_tag:
@@ -124,21 +123,20 @@ def main():
     USE_CRF = True
     BIDIRECTIONAL = True
     USE_BIGRAM = False
-    CNN = True
+    CNN = False
     batch_size = 2
 
     training_data, y = load_chunking(train=True)
     test_X, test_y = load_chunking(test=True)
     emb_mat, word_to_ix = get_embeddings_matrix(training_data, USE_BIGRAM)
     tag_to_ix = tag_indices(y)
-
     char_to_ix = char_dict(training_data)
+
     if CNN == False:
         model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), emb_mat, USE_CRF, BIDIRECTIONAL)
-    else:
-
-        import pdb; pdb.set_trace()
-        model = BILSTM_CNN(len(word_to_ix), len(tag_to_ix), len(char_to_ix),EMBEDDING_DIM, HIDDEN_DIM, emb_mat, CNN=True)
+    # else:
+        # import pdb; pdb.set_trace()
+        # model = BILSTM_CNN(len(word_to_ix), len(tag_to_ix), len(char_to_ix),EMBEDDING_DIM, HIDDEN_DIM, emb_mat, CNN=True)
 
     loss_function = nn.NLLLoss()
     parameters = model.parameters()
@@ -159,14 +157,14 @@ def main():
             sentence_in = prepare_sequence(sentence, word_to_ix)
             targets = prepare_sequence(tags, tag_to_ix)
             tag_scores = model(sentence_in)
-            if USE_CRF:
-                epsilon = model.forward_backward(tag_scores.data.numpy(), len(sentence))
+            # if USE_CRF:
+            #     epsilon = model.forward_backward(tag_scores.data.numpy(), len(sentence))
             # import pdb; pdb.set_trace()
             loss = loss_function(tag_scores, targets)
             loss_cal += loss
             loss.backward()
-            if USE_CRF:
-                model.update_crf(epsilon,len(sentence))
+            # if USE_CRF:
+            #     model.update_crf(epsilon,len(sentence))
 
             optimizer.step()
         PATH = './chunking_models/model_epoch' + str(epoch)

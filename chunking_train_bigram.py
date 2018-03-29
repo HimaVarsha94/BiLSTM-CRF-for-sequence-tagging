@@ -12,7 +12,6 @@ from sklearn.feature_extraction import FeatureHasher
 
 torch.manual_seed(1)
 
-
 def get_embeddings_matrix(data, USE_BIGRAM, USE_HASHING=False, HASHING_SIZE=20):
     word_to_ix = {'unk': 0}
     for sent in data:

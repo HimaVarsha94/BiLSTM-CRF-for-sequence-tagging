@@ -4,10 +4,12 @@ import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-# from lstm_cnn import BILSTM_CNN
-from models.lstm import LSTMTagger
-torch.manual_seed(1)
+from lstm import LSTMTagger
+from lstm_cnn import BILSTM_CNN
+from sklearn.metrics import f1_score, precision_score, recall_score
 
+torch.manual_seed(1)
+use_gpu = 1
 
 def get_embeddings_matrix(data,USE_BIGRAM):
     word_to_ix = {'unk': 0}
@@ -49,7 +51,7 @@ def prepare_sequence(seq, to_ix):
             idxs.append(to_ix[w])
         else:
             idxs.append(0)
-    tensor = torch.LongTensor(idxs)
+    tensor = torch.cuda.LongTensor(idxs)
     return autograd.Variable(tensor)
 
 
@@ -110,12 +112,36 @@ def char_dict(data):
             word = word.lower()
             for character in word:
                 if character not in char_to_ix:
-                    char_to_ix[word] = len(char_to_ix)
+                    char_to_ix[character] = len(char_to_ix)
 
     with open('./chunking_models/char_to_ix.pkl', 'wb') as f:
         pickle.dump(char_to_ix, f)
 
     return char_to_ix
+
+def prepare_words(sentence, char_to_ix):
+    d = []
+    for w in sentence:
+        w = w.lower()
+        idxs = []
+        for char in w:
+            if char in char_to_ix:
+                idxs.append(char_to_ix[char])
+            else:
+                idxs.append(0)
+        d.append(idxs)
+    return d
+    # tensor = torch.LongTensor(d)
+    # return autograd.Variable(tensor)
+
+def char_emb(chars2): 
+    chars2_length = [len(c) for c in chars2]
+    char_maxl = max(chars2_length)
+    chars2_mask = np.zeros((len(chars2_length), char_maxl), dtype='int')
+    for i, c in enumerate(chars2):
+        chars2_mask[i, :chars2_length[i]] = c
+    chars2_mask = autograd.Variable(torch.cuda.LongTensor(chars2_mask))
+    return chars2_mask
 
 def main():
     EMBEDDING_DIM = 50
@@ -135,8 +161,9 @@ def main():
     if CNN == False:
         model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), emb_mat, USE_CRF, BIDIRECTIONAL)
     else:
-        import pdb; pdb.set_trace()
+        print("Cnn")
         model = BILSTM_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, CNN=True)
+        model = model.cuda()
 
     loss_function = nn.NLLLoss()
     parameters = model.parameters()
@@ -156,7 +183,12 @@ def main():
             model.hidden = model.init_hidden()
             sentence_in = prepare_sequence(sentence, word_to_ix)
             targets = prepare_sequence(tags, tag_to_ix)
-            tag_scores = model(sentence_in)
+            if CNN:
+                char_in = prepare_words(sentence, char_to_ix)
+                char_em = char_emb(char_in)
+                tag_scores = model(sentence_in,char_em)
+            else:
+                tag_scores = model(sentence_in)
             loss = loss_function(tag_scores, targets)
             loss_cal += loss
             loss.backward()
@@ -170,15 +202,38 @@ def main():
         print("Finished one epoch and Testing!!")
         correct = 0
         total = 0
+        all_predicted = []
+        all_targets= []
+
         for ind in range(len_test):
             sentence = test_X[ind]
             tags = test_y[ind]
+
             sentence_in = prepare_sequence(sentence, word_to_ix)
             targets = prepare_sequence(tags, tag_to_ix)
-            tag_scores = model(sentence_in)
+            if CNN:
+                char_in = prepare_words(sentence, char_to_ix)
+                char_em = char_emb(char_in)
+                tag_scores = model(sentence_in,char_em)
+            else:
+                tag_scores = model(sentence_in)
             prob, predicted = torch.max(tag_scores.data, 1)
             correct += (predicted == targets.data).sum()
             total += targets.size(0)
+
+            if use_gpu:
+                all_predicted = all_predicted + (autograd.Variable(predicted).data.cpu().numpy().tolist())
+                all_targets = all_targets + (targets.data.cpu().numpy().tolist())
+            else:
+                all_predicted.append(predicted)
+                all_targets.append(targets)
+
+            
+            # loss = loss_function(tag_scores, targets)
+        print("F1 score weighted is ", f1_score(all_targets, all_predicted, average='weighted'))
+        print("F1 score micro is ", f1_score(all_targets, all_predicted, average='micro'))
+        print("Avg Precision ", precision_score(all_targets, all_predicted, average='weighted'))
+        print("Avg Recall ", recall_score(all_targets, all_predicted, average='weighted'))
             # loss = loss_function(tag_scores, targets)
         print("Accuracy of epoch {} is {}".format(epoch, float(correct) / total))
 

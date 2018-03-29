@@ -10,11 +10,7 @@ torch.manual_seed(1)
 class LSTMTagger(nn.Module):
 
     def __init__(self, embedding_dim, hidden_dim, vocab_size, tagset_size, pretrained_weight_embeddings, USE_CRF=False,
-<<<<<<< HEAD
-                 BIDIRECTIONAL=False, USE_BIGRAM=False, bigram_size=0, CNN=False):
-=======
                  BIDIRECTIONAL=False, USE_BIGRAM=False, bigram_size=0, USE_SPELLING=False, SPELLING_SIZE=7):
->>>>>>> 3d5de35558838b7f465f4a1ef1f9f51c1222b185
         super(LSTMTagger, self).__init__()
         self.tagset_size = tagset_size
         self.hidden_dim = hidden_dim

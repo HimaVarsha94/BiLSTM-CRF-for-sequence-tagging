@@ -73,8 +73,7 @@ def chunking_preprocess(datafile, senna=True):
         else:
             new_data.append(tokens[0])
             new_label.append(tokens[2])
-    print(counter)
-    print("Example line of training data and Y\n\n" + str(X[0]) + " \n\n" + str(y[0]) + "\n")
+    # print(counter)
     return X, y
 
 
@@ -92,7 +91,7 @@ def load_chunking(train=False, test=False):
     pdb.set_trace()
 
 
-def tag_indices(y):
+def tag_indices(X, y):
     tag_to_idx = {}
     for sent_tag in y:
         for tag in sent_tag:
@@ -122,7 +121,7 @@ def char_dict(data):
 def main():
     EMBEDDING_DIM = 50
     HIDDEN_DIM = 300  # the dimension for single direction
-    USE_CRF = False
+    USE_CRF = True
     BIDIRECTIONAL = True
     USE_BIGRAM = False
     CNN = True
@@ -150,31 +149,24 @@ def main():
     len_test = len(test_X)
     for epoch in range(50):
         loss_cal = 0.0
-        print(epoch)
+        print('Epoch: {}'.format(epoch))
         for ind in range(len_train):
             sentence = training_data[ind]
             tags = y[ind]
             model.zero_grad()
             # check this
-            model.hidden = model.init_hidden(batch_size)
-            sentence_in = []
-            sentence_in.append(prepare_sequence(sentence, word_to_ix))
-            # sentence_in = prepare_sequence(sentence, word_to_ix)
-            # sentence_in2 = prepare_sequence(sentence, word_to_ix)
-            targets = []
-            targets.append(prepare_sequence(tags, tag_to_ix))
-            targets.append(prepare_sequence(tags, tag_to_ix))
-            # targets2 = prepare_sequence(tags, tag_to_ix)
-
-            if CNN:
-                import pdb; pdb.set_trace()
-                sent = np.array(sentence_in)
-                tag_scores=model.get_bilstm_out(sent)
-            else:
-                tag_scores = model(sentence_in)
+            model.hidden = model.init_hidden()
+            sentence_in = prepare_sequence(sentence, word_to_ix)
+            targets = prepare_sequence(tags, tag_to_ix)
+            tag_scores = model(sentence_in)
+            if USE_CRF:
+                epsilon = model.forward_backward(tag_scores.data.numpy(), len(sentence))
+            # import pdb; pdb.set_trace()
             loss = loss_function(tag_scores, targets)
             loss_cal += loss
             loss.backward()
+            if USE_CRF:
+                model.update_crf(epsilon,len(sentence))
 
             optimizer.step()
         PATH = './chunking_models/model_epoch' + str(epoch)
@@ -182,7 +174,7 @@ def main():
         model.load_state_dict(torch.load(PATH))
 
         print(loss_cal)
-        print("Testing!!")
+        print("Finished one epoch and Testing!!")
         correct = 0
         total = 0
         for ind in range(len_test):
@@ -194,9 +186,8 @@ def main():
             prob, predicted = torch.max(tag_scores.data, 1)
             correct += (predicted == targets.data).sum()
             total += targets.size(0)
-            loss = loss_function(tag_scores, targets)
+            # loss = loss_function(tag_scores, targets)
         print("Accuracy of epoch {} is {}".format(epoch, float(correct) / total))
-
 
 if __name__ == '__main__':
     main()

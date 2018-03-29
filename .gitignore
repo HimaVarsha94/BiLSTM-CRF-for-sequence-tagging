@@ -3,4 +3,4 @@ senna_embeddings/*
 chunking_models/*
 .DS_Store
 
-__pycache__/*
+__pycache__/

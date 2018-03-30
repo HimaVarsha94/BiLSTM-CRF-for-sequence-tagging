@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from models.lstm import LSTMTagger
-import baseline
+# import baseline
 torch.manual_seed(1)
 
 def get_embeddings_matrix(data):

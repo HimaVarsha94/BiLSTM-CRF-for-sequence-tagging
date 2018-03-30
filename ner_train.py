@@ -231,7 +231,7 @@ def char_emb(chars2):
     else:
         chars2_mask = autograd.Variable(torch.LongTensor(chars2_mask))
     return chars2_mask
-    
+
 def char_dict(data):
     char_to_ix = {}
     for sent in data:
@@ -338,35 +338,35 @@ def main():
     last_time = time.time()
     for epoch in range(500):
         loss_cal = 0.0
-        for ind in range(int(len_train)):
-            sentence = training_data[ind]
-            tags = y[ind]
-            model.zero_grad()
-            # THIS NOW HAPPENS IN FORWARD
-            # model.hidden = model.init_hidden()
-            sentence_in = prepare_sequence(sentence, word_to_ix)
-            # targets = prepare_sequence(tags, tag_to_ix, tag=True)
-            targets = torch.LongTensor([tag_to_ix[t] for t in tags])
-            if bilstm_crf_cnn_flag:
-                char_in = prepare_words(sentence, char_to_ix)
-                char_em = char_emb(char_in)
-                # import pdb; pdb.set_trace()
-                nll = model.neg_ll_loss(sentence_in, targets, char_em)
-                loss_cal += nll
-                nll.backward()
-            elif CNN:
-                char_in = prepare_words(sentence, char_to_ix)
-                char_em = char_emb(char_in)
-                tag_scores = model(sentence_in,char_em)
-            else:
-                tag_scores = model(sentence_in)
-
-            if not bilstm_crf_cnn_flag:
-                loss = loss_function(tag_scores, targets)
-                loss_cal += loss
-                loss.backward()
-
-            optimizer.step()
+        # for ind in range(int(len_train)):
+        #     sentence = training_data[ind]
+        #     tags = y[ind]
+        #     model.zero_grad()
+        #     # THIS NOW HAPPENS IN FORWARD
+        #     # model.hidden = model.init_hidden()
+        #     sentence_in = prepare_sequence(sentence, word_to_ix)
+        #     # targets = prepare_sequence(tags, tag_to_ix, tag=True)
+        #     targets = torch.LongTensor([tag_to_ix[t] for t in tags])
+        #     if bilstm_crf_cnn_flag:
+        #         char_in = prepare_words(sentence, char_to_ix)
+        #         char_em = char_emb(char_in)
+        #         # import pdb; pdb.set_trace()
+        #         nll = model.neg_ll_loss(sentence_in, targets, char_em)
+        #         loss_cal += nll
+        #         nll.backward()
+        #     elif CNN:
+        #         char_in = prepare_words(sentence, char_to_ix)
+        #         char_em = char_emb(char_in)
+        #         tag_scores = model(sentence_in,char_em)
+        #     else:
+        #         tag_scores = model(sentence_in)
+        #
+        #     if not bilstm_crf_cnn_flag:
+        #         loss = loss_function(tag_scores, targets)
+        #         loss_cal += loss
+        #         loss.backward()
+        #
+        #     optimizer.step()
 
         print('Epoch {} took {:.3f}s'.format(epoch,time.time() - last_time))
         last_time = time.time()

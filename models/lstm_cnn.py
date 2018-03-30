@@ -10,7 +10,6 @@ torch.manual_seed(1)
 
 class BILSTM_CNN(nn.Module):
 
-<<<<<<< HEAD
     def __init__(self, embedding_dim, hidden_dim, vocab_size, tagset_size, char_size, pretrained_weight_embeddings, tag_to_ix, USE_CRF=False,
                  BIDIRECTIONAL=False, USE_BIGRAM=False, bigram_size=0, CNN=False, use_gpu=0):
         super(BILSTM_CNN, self).__init__()
@@ -93,7 +92,7 @@ class BILSTM_CNN(nn.Module):
 
 
     def neg_ll_loss(self, sentence, gold_labels, chars):
-        feats = self.forward(sentence, chars)
+        feats = self.forward_lstm(sentence, chars)
         return self.crf.neg_ll_loss(sentence, gold_labels, feats)
 
     def forward(self, sentence, chars):

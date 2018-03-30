@@ -48,7 +48,7 @@ class CRF(nn.Module):
         for feat in feats:
             # inner_alpha = []
             # for each tag transition calculate alpha scores
-            alpha = lse(self.trans + alpha.expand(self.num_tags,-1) + feat)
+            alpha = lse(self.trans + alpha + feat)
             # # for to_tag in range(self.num_tags):
             #     # add transition to last alpha score
             #     to_sum = self.trans[to_tag].view(1 ,-1) + alpha

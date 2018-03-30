@@ -10,6 +10,7 @@ torch.manual_seed(1)
 
 class BILSTM_CNN(nn.Module):
 
+<<<<<<< HEAD
     def __init__(self, embedding_dim, hidden_dim, vocab_size, tagset_size, char_size, pretrained_weight_embeddings, tag_to_ix, USE_CRF=False,
                  BIDIRECTIONAL=False, USE_BIGRAM=False, bigram_size=0, CNN=False, use_gpu=0):
         super(BILSTM_CNN, self).__init__()
@@ -22,8 +23,6 @@ class BILSTM_CNN(nn.Module):
         # self.word_embeddings.weight.requires_grad = False
         # if pretrained_weight_embeddings != None:
         self.word_embeddings.weight.data.copy_(torch.from_numpy(pretrained_weight_embeddings))
-
-
 
         if self.CNN:
             print("Entered!!!!")
@@ -40,12 +39,16 @@ class BILSTM_CNN(nn.Module):
         self.bidirectional = BIDIRECTIONAL
         self.append_bigram = USE_BIGRAM
         self.hidden = self.init_hidden()
-        if self.append_bigram:
-            self.hidden2tag = nn.Linear(hidden_dim + bigram_size, tagset_size)
-        else:
-            self.hidden2tag = nn.Linear(hidden_dim, tagset_size)
+        # if self.append_bigram:
+        #     self.hidden2tag = nn.Linear(hidden_dim + bigram_size, tagset_size)
+        # else:
+        #     self.hidden2tag = nn.Linear(hidden_dim, tagset_size)
 
         self.crf = CRF(tagset_size, tag_to_ix, self.use_gpu)
+        if self.bidirectional:
+            self.hidden2tag = nn.Linear(2*hidden_dim, tagset_size)
+        else:
+            self.hidden2tag = nn.Linear(hidden_dim, tagset_size)
 
     def init_hidden(self):
         if self.use_gpu:

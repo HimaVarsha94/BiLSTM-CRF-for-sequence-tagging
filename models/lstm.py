@@ -17,7 +17,6 @@ class LSTMTagger(nn.Module):
         print("Entered!!!!")
         # if pretrained_weight_embeddings != None:
         self.word_embeddings.weight.data.copy_(torch.from_numpy(pretrained_weight_embeddings))
-
         if BIDIRECTIONAL:
             self.lstm = nn.LSTM(embedding_dim, hidden_dim // 2, bidirectional=BIDIRECTIONAL)
         else:

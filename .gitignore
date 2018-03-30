@@ -1,6 +1,8 @@
 data/*
 senna_embeddings/*
 chunking_models/*
+models/ner_models/*
+text/*
 .DS_Store
 
 __pycache__/

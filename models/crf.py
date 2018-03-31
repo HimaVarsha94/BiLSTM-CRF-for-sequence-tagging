@@ -19,10 +19,10 @@ def lse(vec):
 
 class CRF(nn.Module):
 
-    def __init__(self, num_tags, tag_to_ix, gpu):
+    def __init__(self, num_tags, tag_to_ix, use_gpu):
         super(CRF, self).__init__()
         # include start and end tags
-        self.gpu = gpu
+        self.use_gpu = use_gpu
         self.num_tags = num_tags
         self.tag_to_ix = tag_to_ix
 
@@ -31,62 +31,46 @@ class CRF(nn.Module):
         # set transitions that should never happen to MIN_VAL
         init_trans[self.tag_to_ix[START_TAG],:] = MIN_VAL
         init_trans[:,self.tag_to_ix[END_TAG]] = MIN_VAL
-        if self.gpu:
+        if self.use_gpu:
             init_trans = init_trans.cuda()
         self.trans = nn.Parameter(init_trans)
 
     def forward_alg(self, feats):
         # init alphas
-        init_alpha = torch.cuda.FloatTensor(1,self.num_tags).fill_(MIN_VAL)
+        if self.use_gpu:
+            init_alpha = torch.cuda.FloatTensor(1,self.num_tags).fill_(MIN_VAL)
+        else:
+            init_alpha = torch.FloatTensor(1,self.num_tags).fill_(MIN_VAL)
+
         init_alpha[0,self.tag_to_ix[START_TAG]] = 0
 
-        #if self.gpu:
-            #init_alpha = init_alpha.cuda()
         alpha = autograd.Variable(init_alpha)
         # loop over sentence
         for feat in feats:
-            # inner_alpha = []
-            # for each tag transition calculate alpha scores
             # TODO: try adding feat inside
             alpha = lse(self.trans + alpha) +  feat
-            # # for to_tag in range(self.num_tags):
-            #     # add transition to last alpha score
-            #     to_sum = self.trans[to_tag].view(1 ,-1) + alpha
-            #     # calc log sum exp and add emission probability
-            #     inner_alpha.append(lse(to_sum) + feat[to_tag].view(1,-1))
-            # alpha = torch.cat(inner_alpha).view(1,-1)
-        # add final transition score
+
         final_alpha = alpha + self.trans[self.tag_to_ix[END_TAG]]
         return lse(final_alpha)
 
     def viterbi(self, feats, sent_len):
         ## init table of probs of most likely path so far
-        init_v_probs = torch.cuda.FloatTensor(1,self.num_tags).fill_(MIN_VAL)
+        if self.use_gpu:
+            init_v_probs = torch.cuda.FloatTensor(1,self.num_tags).fill_(MIN_VAL)
+        else:
+            init_v_probs = torch.FloatTensor(1,self.num_tags).fill_(MIN_VAL)
+
         init_v_probs[0,self.tag_to_ix[START_TAG]] = 0
         vprobs = autograd.Variable(init_v_probs)
-        #if self.gpu:
-        #    vprobs = vprobs.cuda()
-        ## init table of backpointers, same size
+
         backptrs = []
 
         ## fill out table
         for feat in feats:
-            # TODO: try adding feats now
+            # TODO: try adding feats now rather than later, why does it matter?
             maxes, argmax = torch.max(self.trans + vprobs, 1)
             backptrs.append(argmax.cpu().data.numpy().tolist())
             vprobs = (maxes+feat).view(1,-1)
-            # inner_vprobs = []
-            # inner_backptrs = []
-            # for to_tag in range(self.num_tags):
-            #     ## calc probs for transition to to_tag
-            #     ## add in emission probs later (they don't depend on to_tag)
-            #     temp_probs = self.trans[to_tag] + vprobs
-            #     ## this is best last tag
-            #     best_tag = torch.max(temp_probs,1)[1]
-            #     inner_backptrs.append(best_tag.data[0])
-            #     inner_vprobs.append(temp_probs[0][best_tag])
-            # backptrs.append(inner_backptrs)
-            # vprobs = (torch.cat(inner_vprobs) + feat).view(1,-1)
 
         ## transition to END_TAG
         temp_probs = self.trans[self.tag_to_ix[END_TAG]] + vprobs
@@ -104,10 +88,11 @@ class CRF(nn.Module):
         return final_score, best_seq[1:]
 
     def get_gold_scores(self, feats, tags):
-        score = autograd.Variable(torch.cuda.FloatTensor([0]))
-        #if self.gpu:
-        #    score = score.cuda()
-        # print(type(tags))
+        if self.use_gpu:
+            score = autograd.Variable(torch.cuda.FloatTensor([0]))
+        else:
+            score = autograd.Variable(torch.FloatTensor([0]))
+
         tags = torch.cat([torch.LongTensor([self.tag_to_ix[START_TAG]]), tags])
         for i,feat in enumerate(feats):
             score += self.trans[tags[i+1],tags[i]] + feat[tags[i+1]]

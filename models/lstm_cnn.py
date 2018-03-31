@@ -7,7 +7,6 @@ from models.crf import CRF
 
 torch.manual_seed(1)
 
-
 class BILSTM_CNN(nn.Module):
 
     def __init__(self, embedding_dim, hidden_dim, vocab_size, tagset_size, char_size, pretrained_weight_embeddings, tag_to_ix, USE_CRF=False,

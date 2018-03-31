@@ -12,6 +12,7 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 
 torch.manual_seed(1)
 use_gpu = 1
+torch.cuda.set_device(2)
 
 START_TAG = '<START>'
 END_TAG = '<END>'
@@ -299,10 +300,13 @@ def main():
 
     training_data, y = load_ner(train=True)
     test_X, test_y = load_ner(test=True)
+    y = update_tag_scheme(y, 'iobes')
+    test_y = update_tag_scheme(test_y, 'iobes')
+    print('HELLO HIMA')
+
     char_to_ix = char_dict(training_data)
     tag_to_ix, idx_to_tag = tag_indices(training_data, y)
-    # y = update_tag_scheme(y, 'iobes')
-    # test_y = update_tag_scheme(test_y, 'iobes')
+
 
     if SENNA:
         EMBEDDING_DIM = 50
@@ -376,7 +380,7 @@ def main():
                 #torch.save(model.state_dict(), PATH)
                 #model.load_state_dict(torch.load(PATH))
                 #print(loss_cal)
-                print("Finished one epoch and Testing!!")
+                # print("Finished one epoch and Testing!!")
                 if SENNA:
                     get_results('text/train_ner_bilstm_cnn', model, training_data, y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
                     get_results('text/test_ner_bilstm_cnn', model, test_X, test_y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)

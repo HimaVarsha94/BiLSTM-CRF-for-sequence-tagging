@@ -73,6 +73,7 @@ def chunking_preprocess(datafile, senna=True):
 def load_duolingo(train=False, test=False):
     with open('./data/duolingo/data.txt', 'rb') as f:
         all_data = pickle.load(f)
+        print("all_data_length "+str(len(all_data)))
     with open('./data/duolingo/data_labels.txt', 'rb') as f:
         all_data_labels = pickle.load(f)
     length = len(all_data)
@@ -146,6 +147,8 @@ def main():
         predicted_values = []
         print(len_test)
         for ind in range(len_test):
+            if ind%5000==0:
+                print(ind)
             sentence = test_X[ind]
             tags = test_y[ind]
             sentence_in = prepare_sequence(sentence, word_to_ix)

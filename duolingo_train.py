@@ -80,7 +80,9 @@ def load_duolingo(train=False, test=False):
     if train == True:
         return all_data[:split], all_data_labels[:split]
     if test == True:
-        print("testing data..")
+        pickle.dump(all_data[split:],open("./data/duolingo/test_data.txt","wb"))
+        pickle.dump(all_data_labels[split:], open("./data/duolingo/test_data_label.txt", "wb"))
+        print("testing data length is "+str(len(all_data_labels[split:])))
         return all_data[split:], all_data_labels[split:]
     import pdb; pdb.set_trace()
 
@@ -97,6 +99,8 @@ def tag_indices(X, y):
 
 def main():
     training_data, y = load_duolingo(train=True)
+    from chunking_train import avg_len
+    print("average len is " + str(avg_len(training_data)))
     test_X, test_y = load_duolingo(test=True)
     emb_mat, word_to_ix = get_embeddings_matrix(training_data)
     tag_to_ix = tag_indices(training_data, y) 

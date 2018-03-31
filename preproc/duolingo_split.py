@@ -21,4 +21,9 @@ with open('../data/duolingo/data.txt', 'wb') as f:
 
 with open('../data/duolingo/data_labels.txt', 'wb') as f:
 	pickle.dump(y, f)
-import pdb; pdb.set_trace()
+
+print("num positive "+str(len([yy for yy in y if yy==1])))
+print("num negative "+str(len([yy for yy in y if yy==0])))
+print("sum "+str(len(y)))
+
+# import pdb; pdb.set_trace()

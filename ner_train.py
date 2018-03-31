@@ -5,6 +5,8 @@ import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+
+from chunking_train import avg_len
 from models.lstm import LSTMTagger
 from models.lstm_cnn import BILSTM_CNN
 from models.bilstm_crf_cnn import BiLSTM_CRF_CNN
@@ -365,6 +367,7 @@ def main():
     bilstm_crf_cnn_flag = False
 
     training_data, y = load_ner(train=True)
+    print("average len is " + str(avg_len(training_data)))
     test_X, test_y = load_ner(test=True)
 
     y = update_tag_scheme(y, 'iobes')

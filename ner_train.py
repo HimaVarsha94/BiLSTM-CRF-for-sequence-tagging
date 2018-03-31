@@ -373,8 +373,6 @@ def main():
     char_to_ix = char_dict(training_data)
     tag_to_ix, idx_to_tag = tag_indices(training_data, y)
 
-    
-
     if SENNA:
         EMBEDDING_DIM = 50
         emb_mat, word_to_ix = get_embeddings_matrix(training_data)

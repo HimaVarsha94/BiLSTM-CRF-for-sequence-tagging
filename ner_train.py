@@ -1,4 +1,4 @@
-import time
+import time, os
 import numpy as np, pickle
 import torch
 import torch.autograd as autograd
@@ -10,8 +10,80 @@ from models.lstm_cnn import BILSTM_CNN
 from models.bilstm_crf_cnn import BiLSTM_CRF_CNN
 from sklearn.metrics import f1_score, precision_score, recall_score
 
+# torch.cuda.set_device(3)
 torch.manual_seed(1)
 use_gpu = 0
+
+def iob_iobes(tags):
+    """
+    IOB -> IOBES
+    """
+    new_tags = []
+    for i, tag in enumerate(tags):
+        if tag == 'O':
+            new_tags.append(tag)
+        elif tag.split('-')[0] == 'B':
+            if i + 1 != len(tags) and \
+               tags[i + 1].split('-')[0] == 'I':
+                new_tags.append(tag)
+            else:
+                new_tags.append(tag.replace('B-', 'S-'))
+        elif tag.split('-')[0] == 'I':
+            if i + 1 < len(tags) and \
+                    tags[i + 1].split('-')[0] == 'I':
+                new_tags.append(tag)
+            else:
+                new_tags.append(tag.replace('I-', 'E-'))
+        else:
+            raise Exception('Invalid IOB format!')
+    return new_tags
+def iob2(tags):
+    """
+    Check that tags have a valid IOB format.
+    Tags in IOB1 format are converted to IOB2.
+    """
+    for i, tag in enumerate(tags):
+        if tag == 'O':
+            continue
+        split = tag.split('-')
+        if len(split) != 2 or split[0] not in ['I', 'B']:
+            return False
+        if split[0] == 'B':
+            continue
+        elif i == 0 or tags[i - 1] == 'O':  # conversion IOB1 to IOB2
+            tags[i] = 'B' + tag[1:]
+        elif tags[i - 1][1:] == tag[1:]:
+            continue
+        else:  # conversion IOB1 to IOB2
+            tags[i] = 'B' + tag[1:]
+    return True
+def update_tag_scheme(sentences, tag_scheme):
+    """
+    Check and update sentences tagging scheme to IOB2.
+    Only IOB1 and IOB2 schemes are accepted.
+    """
+    new_sentences = []
+    for i, s in enumerate(sentences):
+        # tags = [w[-1] for w in s]
+        tags = s
+        # Check that tags are given in the IOB format
+        if not iob2(tags):
+            s_str = '\n'.join(' '.join(w) for w in s)
+            raise Exception('Sentences should be given in IOB format! ' +
+                            'Please check sentence %i:\n%s' % (i, s_str))
+        if tag_scheme == 'iob':
+            # If format was IOB1, we convert to IOB2
+            for word, new_tag in zip(s, tags):
+                word[-1] = new_tag
+        elif tag_scheme == 'iobes':
+            new_tags = iob_iobes(tags)
+            new_sentences.append(new_tags)
+            # import pdb; pdb.set_trace()
+            # for word, new_tag in zip(s, new_tags):
+                # word = new_tag
+        else:
+            raise Exception('Unknown tagging scheme!')
+    return new_sentences
 
 START_TAG = '<START>'
 END_TAG = '<END>'
@@ -125,7 +197,6 @@ def get_glove_matrix(data):
 
     with open('./models/ner_models/word_to_ix.pkl', 'wb') as f:
         pickle.dump(word_to_ix, f)
-
     #this contains a list of all senna obj embeddings
     with open('./senna_embeddings/glove_obj.pkl', 'rb') as f:
         glove_obj = pickle.load(f)
@@ -254,7 +325,8 @@ def get_results(filename, model, data_X, data_Y, epoch, idx_to_tag, word_to_ix, 
 
     len_test = len(data_X)
     print("Testing length", len_test)
-    with open(filename+ str(epoch)+'.txt','w') as f:
+    fname = filename+ str(epoch)+'.txt'
+    with open(fname,'w') as f:
         for ind in range(len_test):
             sentence = data_X[ind]
             tags = data_Y[ind]
@@ -280,24 +352,26 @@ def get_results(filename, model, data_X, data_Y, epoch, idx_to_tag, word_to_ix, 
             total += targets.size(0)
             for tag_ in range(len(sentence)):
                 f.write(sentence[tag_] + " " + tags[tag_]+" "+idx_to_tag[predicted[tag_]]+"\n")
-    print("F1 score weighted is ", f1_score(all_targets, all_predicted, average='weighted'))
-    print("F1 score micro is ", f1_score(all_targets, all_predicted, average='micro'))
-    print("Avg Precision ", precision_score(all_targets, all_predicted, average='weighted'))
-    print("Avg Recall ", recall_score(all_targets, all_predicted, average='weighted'))
+            f.write("\n")
+    os.system('perl conlleval < ' + fname)
 
 def main():
 
     USE_CRF = False
-    HIDDEN_DIM = 600
+    HIDDEN_DIM = 200
     CNN = True
-    SENNA = True
-    BIDIRECTIONAL = False
+    SENNA = False
+    BIDIRECTIONAL = True
     bilstm_crf_cnn_flag = False
 
     training_data, y = load_ner(train=True)
     test_X, test_y = load_ner(test=True)
     char_to_ix = char_dict(training_data)
     tag_to_ix, idx_to_tag = tag_indices(training_data, y)
+    #GEORGE
+    y = update_tag_scheme(y, 'iobes')
+    test_y = update_tag_scheme(test_y, 'iobes')
+
     # y = update_tag_scheme(y, 'iobes')
     # test_y = update_tag_scheme(test_y, 'iobes')
 
@@ -314,7 +388,7 @@ def main():
     if CNN == True and USE_CRF == False:
         print("Using BiLSTM-CNN-CRF")
         bilstm_crf_cnn_flag = True
-        model = BILSTM_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, tag_to_ix, CNN=True)
+        model = BILSTM_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, tag_to_ix, CNN=True, BIDIRECTIONAL=True, use_gpu=use_gpu)
     if CNN == True and USE_CRF == True:
         bilstm_crf_cnn_flag = True
         print('Using BiLSTM-CRF-CNN')
@@ -327,7 +401,7 @@ def main():
         loss_function = nn.NLLLoss()
     parameters = model.parameters()
     # parameters = filter(lambda p: model.requires_grad, model.parameters())
-    optimizer = optim.SGD(parameters, lr=0.1)
+    optimizer = optim.SGD(parameters, lr=0.01)
 
     len_train = len(training_data)
     len_test = len(test_X)
@@ -354,6 +428,7 @@ def main():
                 nll = model.neg_ll_loss(sentence_in, targets, char_em)
                 loss_cal += nll
                 nll.backward()
+                torch.nn.utils.clip_grad_norm(model.parameters(), 5.0)
             elif CNN:
                 char_in = prepare_words(sentence, char_to_ix)
                 char_em = char_emb(char_in)
@@ -367,23 +442,23 @@ def main():
                 loss.backward()
 
             optimizer.step()
+            if ind % 80 == 0:
+                #PATH = './models/ner_models/george_tests/' + str(epoch)
+                #torch.save(model.state_dict(), PATH)
+                #model.load_state_dict(torch.load(PATH))
+                #print(loss_cal)
+                print("Finished one epoch and Testing!!")
+                if SENNA:
+                    get_results('text/train_ner_bilstm_cnn', model, training_data, y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
+                    get_results('text/test_ner_bilstm_cnn', model, test_X, test_y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
+                else:
+                    get_results('glove_text/train_ner_bilstm_cnn', model, training_data, y, ind, idx_to_tag, word_to_ix, tag_to_ix,char_to_ix, CNN, use_gpu)
+                    get_results('glove_text/test_ner_bilstm_cnn', model, test_X, test_y, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
+
+                #print('Testing took {:.3f}s'.format(time.time() - last_time))
+                #last_time = time.time()
 
         print('Epoch {} took {:.3f}s'.format(epoch,time.time() - last_time))
-        last_time = time.time()
-
-        PATH = './models/ner_models/model_epoch' + str(epoch)
-        torch.save(model.state_dict(), PATH)
-        model.load_state_dict(torch.load(PATH))
-        print(loss_cal)
-        print("Finished one epoch and Testing!!")
-        if SENNA:
-            get_results('text/train_ner_bilstm_cnn', model, training_data, y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
-            get_results('text/test_ner_bilstm_cnn', model, test_X, test_y, epoch, idx_to_tag, word_to_ix, tag_to_ix, CNN, use_gpu)
-        else:
-            get_results('glove_text/train_ner_bilstm_cnn', model, training_data, y, epoch, idx_to_tag, word_to_ix, tag_to_ix,char_to_ix, CNN, use_gpu)
-            get_results('glove_text/test_ner_bilstm_cnn', model, test_X, test_y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
-
-        print('Testing took {:.3f}s'.format(time.time() - last_time))
         last_time = time.time()
 
 if __name__ == '__main__':

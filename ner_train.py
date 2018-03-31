@@ -1,4 +1,4 @@
-import time
+import time, os
 import numpy as np, pickle
 import torch
 import torch.autograd as autograd
@@ -11,7 +11,7 @@ from models.bilstm_crf_cnn import BiLSTM_CRF_CNN
 from sklearn.metrics import f1_score, precision_score, recall_score
 
 torch.manual_seed(1)
-use_gpu = 0
+use_gpu = 1
 
 START_TAG = '<START>'
 END_TAG = '<END>'
@@ -254,6 +254,7 @@ def get_results(filename, model, data_X, data_Y, epoch, idx_to_tag, word_to_ix, 
 
     len_test = len(data_X)
     print("Testing length", len_test)
+    fname = filename + str(epoch) + '.txt'
     with open(filename+ str(epoch)+'.txt','w') as f:
         for ind in range(len_test):
             sentence = data_X[ind]
@@ -276,10 +277,12 @@ def get_results(filename, model, data_X, data_Y, epoch, idx_to_tag, word_to_ix, 
             else:
                 all_predicted.append(predicted)
                 all_targets.append(targets)
-            correct += (predicted == targets.data).sum()
+            correct += (predicted == targets.cpu().data).sum()
             total += targets.size(0)
             for tag_ in range(len(sentence)):
                 f.write(sentence[tag_] + " " + tags[tag_]+" "+idx_to_tag[predicted[tag_]]+"\n")
+            f.write("\n")
+        os.system('perl conlleval < ' + fname)
     print("F1 score weighted is ", f1_score(all_targets, all_predicted, average='weighted'))
     print("F1 score micro is ", f1_score(all_targets, all_predicted, average='micro'))
     print("Avg Precision ", precision_score(all_targets, all_predicted, average='weighted'))
@@ -288,10 +291,10 @@ def get_results(filename, model, data_X, data_Y, epoch, idx_to_tag, word_to_ix, 
 def main():
 
     USE_CRF = False
-    HIDDEN_DIM = 600
+    HIDDEN_DIM = 200
     CNN = True
-    SENNA = True
-    BIDIRECTIONAL = False
+    SENNA = False
+    BIDIRECTIONAL = True
     bilstm_crf_cnn_flag = False
 
     training_data, y = load_ner(train=True)
@@ -314,7 +317,7 @@ def main():
     if CNN == True and USE_CRF == False:
         print("Using BiLSTM-CNN-CRF")
         bilstm_crf_cnn_flag = True
-        model = BILSTM_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, tag_to_ix, CNN=True)
+        model = BILSTM_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, tag_to_ix, CNN=True, BIDIRECTIONAL=True, use_gpu=use_gpu)
     if CNN == True and USE_CRF == True:
         bilstm_crf_cnn_flag = True
         print('Using BiLSTM-CRF-CNN')
@@ -327,7 +330,7 @@ def main():
         loss_function = nn.NLLLoss()
     parameters = model.parameters()
     # parameters = filter(lambda p: model.requires_grad, model.parameters())
-    optimizer = optim.SGD(parameters, lr=0.1)
+    optimizer = optim.SGD(parameters, lr=0.01)
 
     len_train = len(training_data)
     len_test = len(test_X)
@@ -354,6 +357,7 @@ def main():
                 nll = model.neg_ll_loss(sentence_in, targets, char_em)
                 loss_cal += nll
                 nll.backward()
+                torch.nn.utils.clip_grad_norm(model.parameters(), 5.0)
             elif CNN:
                 char_in = prepare_words(sentence, char_to_ix)
                 char_em = char_emb(char_in)
@@ -367,23 +371,23 @@ def main():
                 loss.backward()
 
             optimizer.step()
+            if ind % 80 == 0:
+                #PATH = './models/ner_models/george_tests/' + str(epoch)
+                #torch.save(model.state_dict(), PATH)
+                #model.load_state_dict(torch.load(PATH))
+                #print(loss_cal)
+                print("Finished one epoch and Testing!!")
+                if SENNA:
+                    get_results('text/train_ner_bilstm_cnn', model, training_data, y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
+                    get_results('text/test_ner_bilstm_cnn', model, test_X, test_y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
+                else:
+                    get_results('glove_text/train_ner_bilstm_cnn', model, training_data, y, ind, idx_to_tag, word_to_ix, tag_to_ix,char_to_ix, CNN, use_gpu)
+                    get_results('glove_text/test_ner_bilstm_cnn', model, test_X, test_y, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
+
+                #print('Testing took {:.3f}s'.format(time.time() - last_time))
+                #last_time = time.time()
 
         print('Epoch {} took {:.3f}s'.format(epoch,time.time() - last_time))
-        last_time = time.time()
-
-        PATH = './models/ner_models/model_epoch' + str(epoch)
-        torch.save(model.state_dict(), PATH)
-        model.load_state_dict(torch.load(PATH))
-        print(loss_cal)
-        print("Finished one epoch and Testing!!")
-        if SENNA:
-            get_results('text/train_ner_bilstm_cnn', model, training_data, y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
-            get_results('text/test_ner_bilstm_cnn', model, test_X, test_y, epoch, idx_to_tag, word_to_ix, tag_to_ix, CNN, use_gpu)
-        else:
-            get_results('glove_text/train_ner_bilstm_cnn', model, training_data, y, epoch, idx_to_tag, word_to_ix, tag_to_ix,char_to_ix, CNN, use_gpu)
-            get_results('glove_text/test_ner_bilstm_cnn', model, test_X, test_y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
-
-        print('Testing took {:.3f}s'.format(time.time() - last_time))
         last_time = time.time()
 
 if __name__ == '__main__':

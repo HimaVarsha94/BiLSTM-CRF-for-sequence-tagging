@@ -30,7 +30,7 @@ class BILSTM_CNN(nn.Module):
             self.char_cnn = nn.Conv2d(in_channels=1, out_channels=self.char_lstm_dim, kernel_size=(3, self.char_dim), padding=(2,0))
 
         if BIDIRECTIONAL:
-            self.lstm = nn.LSTM(embedding_dim, hidden_dim, bidirectional=BIDIRECTIONAL)
+            self.lstm = nn.LSTM(embedding_dim + self.char_lstm_dim, hidden_dim, bidirectional=BIDIRECTIONAL)
         else:
             self.lstm = nn.LSTM(embedding_dim + self.char_lstm_dim, hidden_dim)
 
@@ -44,6 +44,8 @@ class BILSTM_CNN(nn.Module):
         #     self.hidden2tag = nn.Linear(hidden_dim, tagset_size)
 
         self.crf = CRF(tagset_size, tag_to_ix, self.use_gpu)
+        if self.use_gpu:
+            self.crf = self.crf.cuda()
         if self.bidirectional:
             self.hidden2tag = nn.Linear(2*hidden_dim, tagset_size)
         else:
@@ -62,8 +64,9 @@ class BILSTM_CNN(nn.Module):
                 return (autograd.Variable(torch.randn(1, 1, self.hidden_dim)),
                         autograd.Variable(torch.randn(1, 1, self.hidden_dim)))
             else:
-                return (autograd.Variable(torch.cuda.randn(2, 1, self.hidden_dim )),
-                        autograd.Variable(torch.cuda.randn(2, 1, self.hidden_dim )))
+                print(self.bidirectional, self.use_gpu)
+                return (autograd.Variable(torch.randn(2, 1, self.hidden_dim )),
+                        autograd.Variable(torch.randn(2, 1, self.hidden_dim )))
 
     def forward_lstm(self, sentence, chars, bigram_one_hot=None):
         self.hidden = self.init_hidden()
@@ -78,7 +81,9 @@ class BILSTM_CNN(nn.Module):
             else:
                 embeds = torch.cat((embeds, chars_embeds), 1)
         # print(embeds.view(len(sentence), 1, -1).shape)
-        lstm_out, self.hidden = self.lstm(embeds.unsqueeze(1), self.hidden)
+        #lstm_out, self.hidden = self.lstm(embeds.unsqueeze(1), self.hidden)
+        lstm_out, _ = self.lstm(embeds.unsqueeze(1))
+        lstm_out = lstm_out.view(len(sentence), self.hidden_dim*2)
         # print("original shape before MLP "+str(lstm_out.view(len(sentence), -1).shape))
         # print("shape of onehot bigram "+str(bigram_one_hot))
         if self.append_bigram:
@@ -93,6 +98,7 @@ class BILSTM_CNN(nn.Module):
 
     def neg_ll_loss(self, sentence, gold_labels, chars):
         feats = self.forward_lstm(sentence, chars)
+        #print(type(feats))
         return self.crf.neg_ll_loss(sentence, gold_labels, feats)
 
     def forward(self, sentence, chars):

@@ -70,7 +70,7 @@ class BILSTM_CNN(nn.Module):
             if self.use_gpu:
                 embeds = torch.cat((embeds, chars_embeds), 1).cuda()
             else:
-                embeds = torch.cat((embeds, chars_embeds), 1).cuda()
+                embeds = torch.cat((embeds, chars_embeds), 1)
         # print(embeds.view(len(sentence), 1, -1).shape)
         lstm_out, self.hidden = self.lstm(embeds.unsqueeze(1), self.hidden)
         # print("original shape before MLP "+str(lstm_out.view(len(sentence), -1).shape))

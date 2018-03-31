@@ -312,7 +312,7 @@ def char_dict(data):
                 if character not in char_to_ix:
                     char_to_ix[character] = len(char_to_ix)
 
-    with open('./chunking_models/char_to_ix.pkl', 'wb') as f:
+    with open('./models/ner_models/char_to_ix.pkl', 'wb') as f:
         pickle.dump(char_to_ix, f)
 
     return char_to_ix
@@ -366,14 +366,12 @@ def main():
 
     training_data, y = load_ner(train=True)
     test_X, test_y = load_ner(test=True)
-    char_to_ix = char_dict(training_data)
-    tag_to_ix, idx_to_tag = tag_indices(training_data, y)
-    #GEORGE
+
     y = update_tag_scheme(y, 'iobes')
     test_y = update_tag_scheme(test_y, 'iobes')
 
-    # y = update_tag_scheme(y, 'iobes')
-    # test_y = update_tag_scheme(test_y, 'iobes')
+    char_to_ix = char_dict(training_data)
+    tag_to_ix, idx_to_tag = tag_indices(training_data, y)
 
     if SENNA:
         EMBEDDING_DIM = 50

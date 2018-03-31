@@ -25,7 +25,11 @@ class BILSTM_CNN(nn.Module):
         if self.CNN:
             print("Entered!!!!")
             self.char_embeds = nn.Embedding(char_size, self.char_dim)
-            self.init_embedding(self.char_embeds.weight)
+            #as given in the paper, initialising
+            b = np.sqrt(3.0 / self.char_embeds.weight.size(1))
+            nn.init.uniform(self.char_embeds.weight, -b, b)
+
+            # self.init_embedding(self.char_embeds.weight)
             self.char_cnn = nn.Conv2d(in_channels=1, out_channels=self.char_lstm_dim, kernel_size=(3, self.char_dim), padding=(2,0))
 
         if BIDIRECTIONAL:
@@ -47,6 +51,9 @@ class BILSTM_CNN(nn.Module):
             self.crf = self.crf.cuda()
         if self.bidirectional:
             self.hidden2tag = nn.Linear(2*hidden_dim, tagset_size)
+            b = np.sqrt(6.0 / (self.hidden2tag.weight.size(0) + self.hidden2tag.weight.size(1)))
+            nn.init.uniform(self.hidden2tag.weight, -b, b)
+            self.hidden2tag.bias.data.zero_()
         else:
             self.hidden2tag = nn.Linear(hidden_dim, tagset_size)
 
@@ -97,7 +104,6 @@ class BILSTM_CNN(nn.Module):
 
     def neg_ll_loss(self, sentence, gold_labels, chars):
         feats = self.forward_lstm(sentence, chars)
-        #print(type(feats))
         return self.crf.neg_ll_loss(sentence, gold_labels, feats)
 
     def forward(self, sentence, chars):
@@ -105,7 +111,3 @@ class BILSTM_CNN(nn.Module):
         score, tag_seq = self.crf.forward(sentence, feats)
 
         return score, tag_seq
-
-    def init_embedding(self, input_embedding):
-        bias = np.sqrt(3.0 / input_embedding.size(1))
-        nn.init.uniform(input_embedding, -bias, bias)

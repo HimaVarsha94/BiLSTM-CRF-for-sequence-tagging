@@ -11,7 +11,7 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 torch.manual_seed(1)
 use_gpu = 1
 
-def get_embeddings_matrix(data,USE_BIGRAM):
+def get_embeddings_matrix(data):
     word_to_ix = {'unk': 0}
     for sent in data:
         for word in sent:
@@ -134,7 +134,7 @@ def prepare_words(sentence, char_to_ix):
     # tensor = torch.LongTensor(d)
     # return autograd.Variable(tensor)
 
-def char_emb(chars2): 
+def char_emb(chars2):
     chars2_length = [len(c) for c in chars2]
     char_maxl = max(chars2_length)
     chars2_mask = np.zeros((len(chars2_length), char_maxl), dtype='int')
@@ -147,19 +147,17 @@ def main():
     EMBEDDING_DIM = 50
     HIDDEN_DIM = 300  # the dimension for single direction
     USE_CRF = True
-    BIDIRECTIONAL = True
-    USE_BIGRAM = False
     CNN = True
     batch_size = 2
 
     training_data, y = load_chunking(train=True)
     test_X, test_y = load_chunking(test=True)
-    emb_mat, word_to_ix = get_embeddings_matrix(training_data, USE_BIGRAM)
+    emb_mat, word_to_ix = get_embeddings_matrix(training_data)
     tag_to_ix = tag_indices(y)
     char_to_ix = char_dict(training_data)
 
     if CNN == False:
-        model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), emb_mat, USE_CRF, BIDIRECTIONAL)
+        model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), emb_mat, USE_CRF)
     else:
         print("Cnn")
         model = BILSTM_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, CNN=True)
@@ -228,7 +226,7 @@ def main():
                 all_predicted.append(predicted)
                 all_targets.append(targets)
 
-            
+
             # loss = loss_function(tag_scores, targets)
         print("F1 score weighted is ", f1_score(all_targets, all_predicted, average='weighted'))
         print("F1 score micro is ", f1_score(all_targets, all_predicted, average='micro'))

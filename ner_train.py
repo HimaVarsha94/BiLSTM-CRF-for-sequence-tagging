@@ -368,9 +368,10 @@ def main():
     test_X, test_y = load_ner(test=True)
     char_to_ix = char_dict(training_data)
     tag_to_ix, idx_to_tag = tag_indices(training_data, y)
+    
     #GEORGE
-    y = update_tag_scheme(y, 'iobes')
-    test_y = update_tag_scheme(test_y, 'iobes')
+    # y = update_tag_scheme(y, 'iobes')
+    # test_y = update_tag_scheme(test_y, 'iobes')
 
     # y = update_tag_scheme(y, 'iobes')
     # test_y = update_tag_scheme(test_y, 'iobes')

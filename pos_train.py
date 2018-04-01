@@ -12,7 +12,7 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 from random import shuffle
 #torch.cuda.set_device(3)
 # torch.manual_seed(1)
-use_gpu = 0
+use_gpu = 1
 
 START_TAG = '<START>'
 END_TAG = '<END>'

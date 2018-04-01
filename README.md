@@ -45,7 +45,8 @@ This command will run the model on a gpu using CUDA, if you would like to run th
       ├── test.txt
 
       └── train.txt
-      
+  ### Embeddings
+  Make a directory named embeddings and add senna_obj.pkl file(Senna embeddings dictionary) and glove_obj.pkl (glove embeddings dictionary).
 
 Code
 ======

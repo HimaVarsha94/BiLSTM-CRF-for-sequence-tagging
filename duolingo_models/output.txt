@@ -1,0 +1,458 @@
+Do	0	0
+you	0	0
+want	0	0
+to	0	0
+ask	1	1
+a	0	0
+question	0	0
+
+Thanks	1	0
+bye	0	1
+
+Thanks	1	0
+kids	0	1
+
+Do	0	0
+you	0	0
+want	0	0
+to	1	1
+dance	0	0
+with	0	1
+me	0	1
+
+Thanks	1	0
+bye	0	1
+
+I	0	0
+do	0	0
+not	0	0
+agree	1	1
+
+I	0	0
+do	0	1
+not	0	1
+want	0	1
+to	1	1
+be	0	1
+your	0	1
+friend	0	1
+
+Thanks	1	1
+bye	0	1
+
+Thanks	1	0
+bye	0	1
+
+We	0	0
+walked	1	0
+recently	0	1
+
+We	0	0
+had	0	0
+taken	1	0
+the	0	0
+cellphone	0	1
+
+She	0	0
+had	0	0
+earned	1	0
+her	0	1
+love	0	0
+
+Please	0	0
+and	0	1
+thanks	1	1
+
+I	0	0
+do	0	1
+n't	0	1
+want	0	1
+to	1	1
+be	0	1
+your	0	0
+brother	0	0
+
+Decades	1	1
+and	0	1
+years	0	0
+
+I	0	0
+do	0	1
+not	0	0
+agree	1	1
+
+You	0	0
+want	0	0
+to	1	1
+forget	0	1
+me	0	1
+
+Thanks	1	1
+bye	0	1
+
+We	0	0
+are	0	0
+going	0	0
+to	1	0
+my	0	0
+brother	0	1
+'s	0	1
+house	0	1
+
+Thanks	1	1
+bye	0	1
+
+Do	0	0
+you	0	0
+want	0	0
+to	1	0
+ask	1	0
+a	0	1
+question	0	0
+
+She	0	0
+walks	0	1
+towards	1	0
+him	0	1
+
+We	0	0
+are	0	0
+going	0	0
+to	1	0
+my	0	0
+brother	0	0
+'s	0	1
+house	0	1
+
+Thanks	1	0
+bye	0	1
+
+Do	0	0
+you	0	0
+want	0	0
+to	1	0
+dance	0	1
+with	0	0
+me	0	0
+
+Thanks	1	0
+bye	0	1
+
+Do	0	0
+you	0	0
+want	0	0
+to	1	0
+be	0	1
+my	0	0
+girlfriend	0	0
+
+Thanks	1	0
+bye	0	1
+
+Thanks	1	1
+bye	0	0
+
+We	0	0
+are	0	0
+going	0	0
+to	1	0
+my	0	0
+brother	0	1
+'s	0	1
+house	0	0
+
+Do	0	0
+you	0	0
+want	0	0
+to	1	0
+be	0	0
+my	0	0
+girlfriend	0	1
+
+Do	0	0
+you	0	0
+want	0	0
+to	1	1
+dance	0	0
+with	0	1
+me	0	0
+
+Thanks	1	0
+bye	0	1
+
+I	0	1
+have	0	0
+two	0	0
+grandfathers	1	1
+
+Thanks	1	1
+and	0	0
+good	0	0
+night	0	1
+
+Thanks	1	1
+bye	0	0
+
+Thanks	1	0
+bye	0	1
+
+I	0	0
+do	0	1
+not	0	1
+want	0	0
+to	1	1
+shave	0	1
+
+I	0	0
+do	0	0
+not	0	0
+want	0	1
+to	1	1
+see	0	1
+that	0	1
+man	0	1
+
+I	0	0
+do	0	0
+not	0	0
+want	0	0
+to	1	0
+see	0	0
+that	0	0
+man	0	1
+
+We	0	0
+are	0	0
+going	0	1
+to	1	0
+my	0	0
+brother	0	1
+'s	0	1
+house	0	1
+
+Thanks	1	0
+bye	0	1
+
+Do	0	0
+you	0	0
+want	0	1
+to	1	1
+dance	0	0
+with	0	0
+me	0	0
+
+Do	0	0
+you	0	1
+want	0	0
+to	1	0
+be	0	0
+my	0	0
+girlfriend	0	0
+
+Do	0	0
+you	0	0
+want	0	0
+to	1	0
+dance	0	0
+with	0	1
+me	0	0
+
+Thanks	1	0
+bye	0	1
+
+Thanks	1	0
+bye	0	1
+
+We	0	0
+are	0	0
+going	0	0
+to	1	0
+my	0	0
+brother	0	1
+'s	0	1
+house	0	0
+
+Thanks	1	0
+bye	0	1
+
+We	0	1
+are	0	1
+going	0	1
+to	1	1
+my	0	1
+brother	0	1
+'s	0	1
+house	0	1
+
+Thanks	1	1
+bye	0	1
+
+We	0	1
+agree	1	1
+
+Thanks	1	1
+goodbye	0	0
+
+Thanks	1	0
+bye	0	1
+
+They	0	1
+recently	0	1
+came	1	0
+
+I	0	0
+already	0	0
+decided	1	1
+
+I	0	0
+already	0	1
+decided	1	0
+
+Your	0	0
+sisters	0	0
+are	0	0
+going	0	0
+to	1	0
+my	0	0
+father	0	1
+'s	0	1
+restaurant	0	0
+
+We	0	0
+go	0	0
+to	0	0
+school	0	0
+because	0	0
+we	0	0
+want	0	0
+to	1	1
+learn	0	1
+
+Thanks	1	0
+you	0	1
+are	0	1
+welcome	0	0
+
+Thanks	1	1
+bye	0	0
+
+I	0	1
+have	0	0
+two	0	0
+grandfathers	1	0
+
+Who	0	0
+decided	1	1
+this	0	0
+
+Thanks	1	0
+bye	0	1
+
+I	0	1
+do	0	1
+not	0	1
+want	0	1
+to	1	1
+ask	1	1
+for	1	1
+wine	0	1
+
+I	0	1
+do	0	1
+not	0	1
+want	0	1
+to	1	1
+be	0	1
+your	0	1
+brother	0	1
+
+I	0	1
+want	0	1
+to	0	1
+go	0	1
+to	1	1
+a	0	1
+fair	0	1
+
+What	0	1
+do	0	0
+you	0	0
+have	0	0
+under	1	0
+the	0	0
+hat	0	0
+
+We	0	0
+never	0	0
+used	0	1
+to	1	1
+walk	0	1
+on	0	1
+that	0	0
+street	0	0
+
+I	0	0
+did	0	0
+not	0	0
+want	0	0
+to	1	1
+do	0	0
+it	0	0
+
+He	0	0
+does	0	1
+not	0	1
+suffer	1	0
+
+I	0	0
+want	0	0
+to	0	1
+stay	1	0
+here	0	0
+
+Do	0	0
+you	0	0
+want	0	0
+to	1	1
+be	0	0
+my	0	0
+girlfriend	0	0
+
+Do	0	0
+you	0	0
+want	0	0
+to	1	1
+dance	0	0
+with	0	0
+me	0	0
+
+Do	0	0
+you	0	0
+want	0	0
+to	1	0
+be	0	0
+my	0	0
+girlfriend	0	1
+
+I	0	0
+do	0	1
+not	0	0
+want	0	0
+to	1	0
+run	0	0
+because	0	1
+it	0	1
+is	0	1
+hot	0	1
+
+I	0	1
+do	0	1
+not	0	1
+want	0	1
+to	1	1
+run	0	1
+because	0	1
+it	0	1
+is	0	1
+hot	0	1
+

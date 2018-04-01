@@ -4,8 +4,8 @@ import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from lstm import LSTMTagger
-from lstm_cnn import BILSTM_CNN
+from models.lstm import LSTMTagger
+from models.lstm_cnn import BILSTM_CNN
 from sklearn.metrics import f1_score, precision_score, recall_score
 
 torch.manual_seed(1)
@@ -143,6 +143,17 @@ def char_emb(chars2):
     chars2_mask = autograd.Variable(torch.cuda.LongTensor(chars2_mask))
     return chars2_mask
 
+
+def avg_len(data):
+    lens=[]
+    for d in data:
+        try:
+            lens+=[len(d)]
+        except:
+            pass
+    return np.mean(lens),np.std(lens)
+
+
 def main():
     EMBEDDING_DIM = 50
     HIDDEN_DIM = 300  # the dimension for single direction
@@ -151,6 +162,7 @@ def main():
     batch_size = 2
 
     training_data, y = load_chunking(train=True)
+    print("average len is "+str(avg_len(training_data)))
     test_X, test_y = load_chunking(test=True)
     emb_mat, word_to_ix = get_embeddings_matrix(training_data)
     tag_to_ix = tag_indices(y)

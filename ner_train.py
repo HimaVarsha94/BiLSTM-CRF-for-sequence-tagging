@@ -6,9 +6,9 @@ import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from models.lstm import LSTMTagger
+# from models.lstm import LSTMTagger
 from models.lstm_cnn import BILSTM_CNN
-from models.bilstm_crf_cnn import BiLSTM_CRF_CNN
+# from models.bilstm_crf_cnn import BiLSTM_CRF_CNN
 from sklearn.metrics import f1_score, precision_score, recall_score
 
 torch.manual_seed(1)
@@ -18,6 +18,7 @@ use_gpu = 1
 START_TAG = '<START>'
 END_TAG = '<END>'
 
+## the following 4 helper functions are copied from https://github.com/ZhixiuYe/NER-pytorch since they are helper functions to get BIOES tags from BIO data and are not part of our implementation
 def cap_feature(s):
     if s.lower() == s:
         return 0
@@ -51,6 +52,7 @@ def iob_iobes(tags):
         else:
             raise Exception('Invalid IOB format!')
     return new_tags
+
 def iob2(tags):
     """
     Check that tags have a valid IOB format.
@@ -71,6 +73,7 @@ def iob2(tags):
         else:  # conversion IOB1 to IOB2
             tags[i] = 'B' + tag[1:]
     return True
+
 def update_tag_scheme(sentences, tag_scheme):
     """
     Check and update sentences tagging scheme to IOB2.

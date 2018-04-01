@@ -5,12 +5,12 @@ import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from models.lstm import LSTMTagger
+# from models.lstm import LSTMTagger
 from models.lstm_cnn import BILSTM_CNN
-from models.bilstm_crf_cnn import BiLSTM_CRF_CNN
+# from models.bilstm_crf_cnn import BiLSTM_CRF_CNN
 from sklearn.metrics import f1_score, precision_score, recall_score
 from random import shuffle
-# torch.cuda.set_device(2)
+torch.cuda.set_device(3)
 # torch.manual_seed(1)
 use_gpu = 0
 
@@ -18,13 +18,6 @@ START_TAG = '<START>'
 END_TAG = '<END>'
 
 def cap_feature(s):
-    """
-    Capitalization feature:
-    0 = low caps
-    1 = all caps
-    2 = first letter caps
-    3 = one capital (not first letter)
-    """
     if s.lower() == s:
         return 0
     elif s.upper() == s:
@@ -202,11 +195,14 @@ def get_results(filename, model, data_X, data_Y, epoch, idx_to_tag, word_to_ix, 
 
             sentence_in = prepare_sequence(sentence, word_to_ix)
             targets = prepare_sequence(tags, tag_to_ix, tag=True)
-            caps = autograd.Variable(torch.LongTensor([cap_feature(w) for w in sentence]))
+            if use_gpu:
+                caps = autograd.Variable(torch.LongTensor([cap_feature(w) for w in sentence])).cuda()
+            else:
+                caps = autograd.Variable(torch.LongTensor([cap_feature(w) for w in sentence]))
             if CNN:
                 char_in = prepare_words(sentence, char_to_ix)
                 char_em = char_emb(char_in)
-                prob, tag_seq = model(sentence_in,char_em, caps, 0)
+                prob, tag_seq = model(sentence_in, char_em, caps, 0)
                 predicted = torch.LongTensor(tag_seq)
             else:
                 tag_scores = model(sentence_in)
@@ -229,10 +225,15 @@ def get_results(filename, model, data_X, data_Y, epoch, idx_to_tag, word_to_ix, 
             f.write("\n")
     print("Accuracy is ", float(correct)/total)
 
+def adjust_learning_rate(optimizer, epoch, LR):
+    lr = LR / (1 + 0.5*epoch)
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+
 def main():
 
     USE_CRF = False
-    HIDDEN_DIM = 400
+    HIDDEN_DIM = 200
     CNN = True
     SENNA = False
     BIDIRECTIONAL = True
@@ -273,7 +274,8 @@ def main():
     parameters = model.parameters()
     # parameters = filter(lambda p: model.requires_grad, model.parameters())
     # optimizer = optim.Adam(parameters, lr=0.001)
-    optimizer = optim.SGD(parameters, lr=0.01)
+    learning_rate = 0.01
+    optimizer = optim.SGD(parameters, lr=learning_rate)
 
     len_train = len(training_data)
     len_test = len(test_X)
@@ -284,9 +286,12 @@ def main():
     indices =[i for i in range(len_train)]
     shuffle(indices)
     last_time = time.time()
+    fake_count = 0
     for epoch in range(500):
         loss_cal = 0.0
+        count = 0
         for ind in (indices):
+            count += 1
             sentence = training_data[ind]
             tags = y[ind]
             # data = all_data[ind]
@@ -327,14 +332,10 @@ def main():
                 loss.backward()
 
             optimizer.step()
-            if ind % 1000 == 0 and ind!=0 and (ind > 20000 and epoch==0):
+            if count % 1000 == 0 and ((count > 20000 and epoch==0) or (epoch!=0)):
                 print(loss_cal)
                 loss_cal = 0
-                #PATH = './models/ner_models/george_tests/' + str(epoch)
-                #torch.save(model.state_dict(), PATH)
-                #model.load_state_dict(torch.load(PATH))
-                #print(loss_cal)
-                print("Finished one epoch and Testing!!")
+                print(count, epoch)
                 if SENNA:
                     # get_results('text/train_ner_bilstm_cnn', model, training_data, y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
                     get_results('text/test_ner_bilstm_cnn', model, test_X, test_y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
@@ -342,6 +343,10 @@ def main():
                     # get_results('pos_glove_text/train_ner_bilstm_cnn', model, training_data, y, ind, idx_to_tag, word_to_ix, tag_to_ix,char_to_ix, CNN, use_gpu)
                     # get_results('pos_glove_text/dev_ner_bilstm_cnn', model, dev_X, dev_y, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
                     get_results('pos_glove_text/test_ner_bilstm_cnn', model, test_X, test_y, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
+            if count == 0 or count == 20000:
+                fake_count += 1
+                print("Annealing")
+                adjust_learning_rate(optimizer, fake_count, learning_rate)
 
         print('Epoch {} took {:.3f}s'.format(epoch,time.time() - last_time))
         last_time = time.time()

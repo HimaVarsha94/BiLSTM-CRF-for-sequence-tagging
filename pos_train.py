@@ -10,7 +10,7 @@ from models.lstm_cnn import BILSTM_CNN
 # from models.bilstm_crf_cnn import BiLSTM_CRF_CNN
 from sklearn.metrics import f1_score, precision_score, recall_score
 from random import shuffle
-torch.cuda.set_device(3)
+#torch.cuda.set_device(3)
 # torch.manual_seed(1)
 use_gpu = 0
 
@@ -39,7 +39,7 @@ def get_embeddings_matrix(data):
         pickle.dump(word_to_ix, f)
         
     #this contains a list of all senna obj embeddings
-    with open('./senna_embeddings/senna_obj.pkl', 'rb') as f:
+    with open('./embeddings/senna_obj.pkl', 'rb') as f:
         senna_obj = pickle.load(f)
     #embeddings matrix with each row corresponding to a word to pass to nn.embedding layer
     embeddings_mat = np.zeros((len(word_to_ix), 50))
@@ -66,7 +66,7 @@ def get_glove_matrix(data):
     with open('./models/pos_models/word_to_ix.pkl', 'wb') as f:
         pickle.dump(word_to_ix, f)
     #this contains a list of all senna obj embeddings
-    with open('./senna_embeddings/glove_obj.pkl', 'rb') as f:
+    with open('./embeddings/glove_obj.pkl', 'rb') as f:
         glove_obj = pickle.load(f)
     #embeddings matrix with each row corresponding to a word to pass to nn.embedding layer
     embeddings_mat = np.zeros((len(word_to_ix), 100))
@@ -240,8 +240,6 @@ def main():
     bilstm_crf_cnn_flag = False
 
     training_data, y = load_pos(train=True)
-    from chunking_train import avg_len
-    print("average len is " + str(avg_len(training_data)))
     test_X, test_y = load_pos(test=True)
     dev_X, dev_y = load_pos(dev=True)
 

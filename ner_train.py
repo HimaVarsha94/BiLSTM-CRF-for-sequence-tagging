@@ -114,7 +114,7 @@ def get_embeddings_matrix(data):
         pickle.dump(word_to_ix, f)
 
     #this contains a list of all senna obj embeddings
-    with open('./senna_embeddings/senna_obj.pkl', 'rb') as f:
+    with open('./embeddings/senna_obj.pkl', 'rb') as f:
         senna_obj = pickle.load(f)
     #embeddings matrix with each row corresponding to a word to pass to nn.embedding layer
     embeddings_mat = np.zeros((len(word_to_ix), 50))
@@ -142,7 +142,7 @@ def get_glove_matrix(data):
         pickle.dump(word_to_ix, f)
 
     #this contains a list of all senna obj embeddings
-    with open('./senna_embeddings/glove_obj.pkl', 'rb') as f:
+    with open('./embeddings/glove_obj.pkl', 'rb') as f:
         glove_obj = pickle.load(f)
     #embeddings matrix with each row corresponding to a word to pass to nn.embedding layer
     embeddings_mat = np.zeros((len(word_to_ix), 100))

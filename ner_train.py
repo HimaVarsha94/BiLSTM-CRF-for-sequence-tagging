@@ -1,5 +1,6 @@
 import time, os
 import numpy as np, pickle
+from random import shuffle
 import torch
 import torch.autograd as autograd
 import torch.nn as nn
@@ -10,83 +11,22 @@ from models.lstm_cnn import BILSTM_CNN
 from models.bilstm_crf_cnn import BiLSTM_CRF_CNN
 from sklearn.metrics import f1_score, precision_score, recall_score
 
-# torch.cuda.set_device(3)
 torch.manual_seed(1)
-use_gpu = 0
-
-def iob_iobes(tags):
-    """
-    IOB -> IOBES
-    """
-    new_tags = []
-    for i, tag in enumerate(tags):
-        if tag == 'O':
-            new_tags.append(tag)
-        elif tag.split('-')[0] == 'B':
-            if i + 1 != len(tags) and \
-               tags[i + 1].split('-')[0] == 'I':
-                new_tags.append(tag)
-            else:
-                new_tags.append(tag.replace('B-', 'S-'))
-        elif tag.split('-')[0] == 'I':
-            if i + 1 < len(tags) and \
-                    tags[i + 1].split('-')[0] == 'I':
-                new_tags.append(tag)
-            else:
-                new_tags.append(tag.replace('I-', 'E-'))
-        else:
-            raise Exception('Invalid IOB format!')
-    return new_tags
-def iob2(tags):
-    """
-    Check that tags have a valid IOB format.
-    Tags in IOB1 format are converted to IOB2.
-    """
-    for i, tag in enumerate(tags):
-        if tag == 'O':
-            continue
-        split = tag.split('-')
-        if len(split) != 2 or split[0] not in ['I', 'B']:
-            return False
-        if split[0] == 'B':
-            continue
-        elif i == 0 or tags[i - 1] == 'O':  # conversion IOB1 to IOB2
-            tags[i] = 'B' + tag[1:]
-        elif tags[i - 1][1:] == tag[1:]:
-            continue
-        else:  # conversion IOB1 to IOB2
-            tags[i] = 'B' + tag[1:]
-    return True
-def update_tag_scheme(sentences, tag_scheme):
-    """
-    Check and update sentences tagging scheme to IOB2.
-    Only IOB1 and IOB2 schemes are accepted.
-    """
-    new_sentences = []
-    for i, s in enumerate(sentences):
-        # tags = [w[-1] for w in s]
-        tags = s
-        # Check that tags are given in the IOB format
-        if not iob2(tags):
-            s_str = '\n'.join(' '.join(w) for w in s)
-            raise Exception('Sentences should be given in IOB format! ' +
-                            'Please check sentence %i:\n%s' % (i, s_str))
-        if tag_scheme == 'iob':
-            # If format was IOB1, we convert to IOB2
-            for word, new_tag in zip(s, tags):
-                word[-1] = new_tag
-        elif tag_scheme == 'iobes':
-            new_tags = iob_iobes(tags)
-            new_sentences.append(new_tags)
-            # import pdb; pdb.set_trace()
-            # for word, new_tag in zip(s, new_tags):
-                # word = new_tag
-        else:
-            raise Exception('Unknown tagging scheme!')
-    return new_sentences
+use_gpu = 1
+# torch.cuda.set_device(3)
 
 START_TAG = '<START>'
 END_TAG = '<END>'
+
+def cap_feature(s):
+    if s.lower() == s:
+        return 0
+    elif s.upper() == s:
+        return 1
+    elif s[0].upper() == s[0]:
+        return 2
+    else:
+        return 3
 
 def iob_iobes(tags):
     """
@@ -197,6 +137,7 @@ def get_glove_matrix(data):
 
     with open('./models/ner_models/word_to_ix.pkl', 'wb') as f:
         pickle.dump(word_to_ix, f)
+
     #this contains a list of all senna obj embeddings
     with open('./senna_embeddings/glove_obj.pkl', 'rb') as f:
         glove_obj = pickle.load(f)
@@ -248,7 +189,8 @@ def ner_preprocess(datafile, senna=True):
         else:
             new_data.append(tokens[0])
             new_label.append(tokens[3])
-    print(counter)
+    # import pdb; pdb.set_trace()
+    #print(counter)
     return X, y
 
 def load_ner(train=False, test=False):
@@ -257,7 +199,7 @@ def load_ner(train=False, test=False):
         X_train, y_train = ner_preprocess(train_data)
         return X_train, y_train
     if test == True:
-        print("testing data..")
+        #print("testing data..")
         test_data = open('./data/ner/eng.testb')
         X_test, y_test = ner_preprocess(test_data)
         return X_test, y_test
@@ -312,7 +254,7 @@ def char_dict(data):
                 if character not in char_to_ix:
                     char_to_ix[character] = len(char_to_ix)
 
-    with open('./models/ner_models/char_to_ix.pkl', 'wb') as f:
+    with open('./chunking_models/char_to_ix.pkl', 'wb') as f:
         pickle.dump(char_to_ix, f)
 
     return char_to_ix
@@ -325,21 +267,26 @@ def get_results(filename, model, data_X, data_Y, epoch, idx_to_tag, word_to_ix, 
 
     len_test = len(data_X)
     print("Testing length", len_test)
-    fname = filename+ str(epoch)+'.txt'
-    with open(fname,'w') as f:
+    fname = filename + str(epoch) + '.txt'
+    with open(filename+ str(epoch)+'.txt','w') as f:
         for ind in range(len_test):
             sentence = data_X[ind]
             tags = data_Y[ind]
 
             sentence_in = prepare_sequence(sentence, word_to_ix)
             targets = prepare_sequence(tags, tag_to_ix, tag=True)
+            if use_gpu:
+                caps = autograd.Variable(torch.LongTensor([cap_feature(w) for w in sentence])).cuda()
+            else:
+                caps = autograd.Variable(torch.LongTensor([cap_feature(w) for w in sentence]))
+
             if CNN:
                 char_in = prepare_words(sentence, char_to_ix)
                 char_em = char_emb(char_in)
-                prob, tag_seq = model(sentence_in,char_em)
+                prob, tag_seq = model(sentence_in,char_em, caps, 0)
                 predicted = torch.LongTensor(tag_seq)
             else:
-                tag_scores = model(sentence_in)
+                tag_scores = model(sentence_in, 0)
                 prob, predicted = torch.max(tag_scores.data, 1)
 
             if use_gpu:
@@ -348,12 +295,18 @@ def get_results(filename, model, data_X, data_Y, epoch, idx_to_tag, word_to_ix, 
             else:
                 all_predicted.append(predicted)
                 all_targets.append(targets)
-            correct += (predicted == targets.data).sum()
+            correct += (predicted == targets.cpu().data).sum()
             total += targets.size(0)
             for tag_ in range(len(sentence)):
                 f.write(sentence[tag_] + " " + tags[tag_]+" "+idx_to_tag[predicted[tag_]]+"\n")
             f.write("\n")
-    os.system('perl conlleval < ' + fname)
+        res = os.system('perl conlleval < ' + fname)
+        if res:
+            print('Filename: {}'.format(fname))
+    print("F1 score weighted is ", f1_score(all_targets, all_predicted, average='weighted'))
+    print("F1 score micro is ", f1_score(all_targets, all_predicted, average='micro'))
+    print("Avg Precision ", precision_score(all_targets, all_predicted, average='weighted'))
+    print("Avg Recall ", recall_score(all_targets, all_predicted, average='weighted'))
 
 def main():
 
@@ -363,15 +316,16 @@ def main():
     SENNA = False
     BIDIRECTIONAL = True
     bilstm_crf_cnn_flag = False
+    BATCH_SIZE = 10
 
     training_data, y = load_ner(train=True)
     test_X, test_y = load_ner(test=True)
-
     y = update_tag_scheme(y, 'iobes')
     test_y = update_tag_scheme(test_y, 'iobes')
 
     char_to_ix = char_dict(training_data)
     tag_to_ix, idx_to_tag = tag_indices(training_data, y)
+
 
     if SENNA:
         EMBEDDING_DIM = 50
@@ -399,7 +353,11 @@ def main():
         loss_function = nn.NLLLoss()
     parameters = model.parameters()
     # parameters = filter(lambda p: model.requires_grad, model.parameters())
-    optimizer = optim.SGD(parameters, lr=0.01)
+    LR = 0.05
+    WD = 0
+    optimizer = optim.SGD(parameters, lr=LR, weight_decay=WD)
+
+    print('learning rate: {}, weight decay: {}'.format(LR, WD))
 
     len_train = len(training_data)
     len_test = len(test_X)
@@ -407,10 +365,18 @@ def main():
     print("Number of test sentences ", len_test)
     print('Training...')
 
+    def adjust_learning_rate(optimizer, epoch):
+        lr = LR / (1 + 0.5*epoch)
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = lr
+
     last_time = time.time()
     for epoch in range(500):
+        adjust_learning_rate(optimizer, epoch)
         loss_cal = 0.0
-        for ind in range(int(len_train)):
+        indices =[i for i in range(len_train)]
+        shuffle(indices)
+        for ind in indices:
             sentence = training_data[ind]
             tags = y[ind]
             model.zero_grad()
@@ -419,11 +385,16 @@ def main():
             sentence_in = prepare_sequence(sentence, word_to_ix)
             # targets = prepare_sequence(tags, tag_to_ix, tag=True)
             targets = torch.LongTensor([tag_to_ix[t] for t in tags])
+            if use_gpu:
+                caps = autograd.Variable(torch.LongTensor([cap_feature(w) for w in sentence])).cuda()
+            else:
+                caps = autograd.Variable(torch.LongTensor([cap_feature(w) for w in sentence]))
+
             if bilstm_crf_cnn_flag:
                 char_in = prepare_words(sentence, char_to_ix)
                 char_em = char_emb(char_in)
                 # import pdb; pdb.set_trace()
-                nll = model.neg_ll_loss(sentence_in, targets, char_em)
+                nll = model.neg_ll_loss(sentence_in, targets, char_em, caps,  0.5)
                 loss_cal += nll
                 nll.backward()
                 torch.nn.utils.clip_grad_norm(model.parameters(), 5.0)
@@ -440,21 +411,21 @@ def main():
                 loss.backward()
 
             optimizer.step()
-            if ind % 80 == 0:
+            #if ind % 1000 == 0:
                 #PATH = './models/ner_models/george_tests/' + str(epoch)
                 #torch.save(model.state_dict(), PATH)
                 #model.load_state_dict(torch.load(PATH))
                 #print(loss_cal)
-                print("Finished one epoch and Testing!!")
-                if SENNA:
-                    get_results('text/train_ner_bilstm_cnn', model, training_data, y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
-                    get_results('text/test_ner_bilstm_cnn', model, test_X, test_y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
-                else:
-                    get_results('glove_text/train_ner_bilstm_cnn', model, training_data, y, ind, idx_to_tag, word_to_ix, tag_to_ix,char_to_ix, CNN, use_gpu)
-                    get_results('glove_text/test_ner_bilstm_cnn', model, test_X, test_y, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
+                # print("Finished one epoch and Testing!!")
+        if SENNA:
+            #get_results('text/train_ner_bilstm_cnn', model, training_data, y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
+            get_results('text/test_ner_bilstm_cnn', model, test_X, test_y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
+        else:
+            #get_results('glove_text/train_ner_bilstm_cnn', model, training_data, y, ind, idx_to_tag, word_to_ix, tag_to_ix,char_to_ix, CNN, use_gpu)
+            get_results('glove_text/test_ner_bilstm_cnn', model, test_X, test_y, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
 
-                #print('Testing took {:.3f}s'.format(time.time() - last_time))
-                #last_time = time.time()
+        #print('Testing took {:.3f}s'.format(time.time() - last_time))
+        #last_time = time.time()
 
         print('Epoch {} took {:.3f}s'.format(epoch,time.time() - last_time))
         last_time = time.time()

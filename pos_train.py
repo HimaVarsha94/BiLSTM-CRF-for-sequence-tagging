@@ -240,6 +240,8 @@ def main():
     bilstm_crf_cnn_flag = False
 
     training_data, y = load_pos(train=True)
+    from chunking_train import avg_len
+    print("average len is " + str(avg_len(training_data)))
     test_X, test_y = load_pos(test=True)
     dev_X, dev_y = load_pos(dev=True)
 

@@ -73,6 +73,7 @@ def chunking_preprocess(datafile, senna=True):
 def load_duolingo(train=False, test=False):
     with open('./data/duolingo/data.txt', 'rb') as f:
         all_data = pickle.load(f)
+        print("all_data_length "+str(len(all_data)))
     with open('./data/duolingo/data_labels.txt', 'rb') as f:
         all_data_labels = pickle.load(f)
     length = len(all_data)
@@ -80,7 +81,9 @@ def load_duolingo(train=False, test=False):
     if train == True:
         return all_data[:split], all_data_labels[:split]
     if test == True:
-        print("testing data..")
+        pickle.dump(all_data[split:],open("./data/duolingo/test_data.txt","wb"))
+        pickle.dump(all_data_labels[split:], open("./data/duolingo/test_data_label.txt", "wb"))
+        print("testing data length is "+str(len(all_data_labels[split:])))
         return all_data[split:], all_data_labels[split:]
     import pdb; pdb.set_trace()
 
@@ -97,6 +100,8 @@ def tag_indices(X, y):
 
 def main():
     training_data, y = load_duolingo(train=True)
+    from chunking_train import avg_len
+    print("average len is " + str(avg_len(training_data)))
     test_X, test_y = load_duolingo(test=True)
     emb_mat, word_to_ix = get_embeddings_matrix(training_data)
     tag_to_ix = tag_indices(training_data, y) 
@@ -142,6 +147,8 @@ def main():
         predicted_values = []
         print(len_test)
         for ind in range(len_test):
+            if ind%5000==0:
+                print(ind)
             sentence = test_X[ind]
             tags = test_y[ind]
             sentence_in = prepare_sequence(sentence, word_to_ix)

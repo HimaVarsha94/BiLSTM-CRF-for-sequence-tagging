@@ -77,7 +77,6 @@ class BILSTM_CNN(nn.Module):
                 return (autograd.Variable(torch.randn(1, 1, self.hidden_dim)),
                         autograd.Variable(torch.randn(1, 1, self.hidden_dim)))
             else:
-                print(self.bidirectional, self.use_gpu)
                 return (autograd.Variable(torch.randn(2, 1, self.hidden_dim )),
                         autograd.Variable(torch.randn(2, 1, self.hidden_dim )))
 

@@ -23,17 +23,29 @@ This command will run the model on a gpu using CUDA, if you would like to run th
   The data should be stored in the data directory in the following format:
 
   data
+
   ├── conll2000
+
   │   ├── test.txt
+
   │   └── train.txt
+
   ├── ner
+
   │   ├── eng.testa
+
   │   ├── eng.testb
+
   │   └── eng.train
+
   └── pos
+
       ├── dev.txt
+
       ├── test.txt
+
       └── train.txt
+      
 
 Code
 ======

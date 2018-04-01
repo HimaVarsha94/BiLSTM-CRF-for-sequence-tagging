@@ -9,13 +9,30 @@ from models.lstm import LSTMTagger
 from models.lstm_cnn import BILSTM_CNN
 from models.bilstm_crf_cnn import BiLSTM_CRF_CNN
 from sklearn.metrics import f1_score, precision_score, recall_score
-
-torch.cuda.set_device(3)
+from random import shuffle
+# torch.cuda.set_device(2)
 # torch.manual_seed(1)
-use_gpu = 1
+use_gpu = 0
 
 START_TAG = '<START>'
 END_TAG = '<END>'
+
+def cap_feature(s):
+    """
+    Capitalization feature:
+    0 = low caps
+    1 = all caps
+    2 = first letter caps
+    3 = one capital (not first letter)
+    """
+    if s.lower() == s:
+        return 0
+    elif s.upper() == s:
+        return 1
+    elif s[0].upper() == s[0]:
+        return 2
+    else:
+        return 3
 
 def get_embeddings_matrix(data):
     word_to_ix = {'unk':0}
@@ -185,14 +202,14 @@ def get_results(filename, model, data_X, data_Y, epoch, idx_to_tag, word_to_ix, 
 
             sentence_in = prepare_sequence(sentence, word_to_ix)
             targets = prepare_sequence(tags, tag_to_ix, tag=True)
+            caps = autograd.Variable(torch.LongTensor([cap_feature(w) for w in sentence]))
             if CNN:
                 char_in = prepare_words(sentence, char_to_ix)
                 char_em = char_emb(char_in)
-                prob, tag_seq = model(sentence_in,char_em)
+                prob, tag_seq = model(sentence_in,char_em, caps, 0)
                 predicted = torch.LongTensor(tag_seq)
             else:
                 tag_scores = model(sentence_in)
-                import pdb; pdb.set_trace()
                 prob, predicted = torch.max(tag_scores.data, 1)
 
             if use_gpu:
@@ -216,7 +233,7 @@ def main():
 
     USE_CRF = False
     HIDDEN_DIM = 400
-    CNN = False
+    CNN = True
     SENNA = False
     BIDIRECTIONAL = True
     bilstm_crf_cnn_flag = False
@@ -238,7 +255,7 @@ def main():
 
     if CNN == False and USE_CRF == False:
         print("Bilstm")
-        model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), emb_mat, USE_CRF, BIDIRECTIONAL=True)
+        model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix))#, emb_mat, USE_CRF, BIDIRECTIONAL=True)
     if CNN == True and USE_CRF == False:
         print("Using BiLSTM-CNN-CRF")
         bilstm_crf_cnn_flag = True
@@ -255,7 +272,8 @@ def main():
         loss_function = nn.NLLLoss()
     parameters = model.parameters()
     # parameters = filter(lambda p: model.requires_grad, model.parameters())
-    optimizer = optim.SGD(parameters, lr=0.01, weight_decay=0.05)
+    # optimizer = optim.Adam(parameters, lr=0.001)
+    optimizer = optim.SGD(parameters, lr=0.01)
 
     len_train = len(training_data)
     len_test = len(test_X)
@@ -263,22 +281,24 @@ def main():
     print("Number of test sentences ", len_test)
     print('Training...')
 
+    indices =[i for i in range(len_train)]
+    shuffle(indices)
     last_time = time.time()
     for epoch in range(500):
         loss_cal = 0.0
-        for ind in range(int(len_train)):
+        for ind in (indices):
             sentence = training_data[ind]
             tags = y[ind]
             # data = all_data[ind]
             model.zero_grad()
             # THIS NOW HAPPENS IN FORWARD
-            model.hidden = model.init_hidden()#########
+            # model.hidden = model.init_hidden()#########
             sentence_in = prepare_sequence(sentence, word_to_ix)
             # sentence_in = data['sent']
-            targets = prepare_sequence(tags, tag_to_ix, tag=True)########
+            # targets = prepare_sequence(tags, tag_to_ix, tag=True)########
             # targets = data['tags']
-
-            # targets = torch.LongTensor([tag_to_ix[t] for t in tags])
+            caps = autograd.Variable(torch.LongTensor([cap_feature(w) for w in sentence]))
+            targets = torch.LongTensor([tag_to_ix[t] for t in tags])
 
             # targets = data['tags']
             # import pdb; pdb.set_trace()
@@ -287,11 +307,10 @@ def main():
                 # char_in = data['chars']
                 char_em = char_emb(char_in)
                 # import pdb; pdb.set_trace()
-                try:
-                    nll = model.neg_ll_loss(sentence_in, targets, char_em)
-                except:
-                    print("Empty")
-                    continue
+                if use_gpu:
+                    nll = model.neg_ll_loss(sentence_in.cuda(), targets, char_em.cuda(), caps.cuda(), 0.5)
+                else:
+                    nll = model.neg_ll_loss(sentence_in, targets, char_em, caps, 0.5)
                 loss_cal += nll
                 nll.backward()
                 torch.nn.utils.clip_grad_norm(model.parameters(), 5.0)
@@ -303,25 +322,25 @@ def main():
                 tag_scores = model(sentence_in)
 
             if not bilstm_crf_cnn_flag:
-                print("Optimise")
-                import pdb; pdb.set_trace()
                 loss = loss_function(tag_scores, targets)
                 loss_cal += loss
                 loss.backward()
 
             optimizer.step()
-            if ind % 1000 == 0 and ind!=0:
+            if ind % 1000 == 0 and ind!=0 and (ind > 20000 and epoch==0):
+                print(loss_cal)
+                loss_cal = 0
                 #PATH = './models/ner_models/george_tests/' + str(epoch)
                 #torch.save(model.state_dict(), PATH)
                 #model.load_state_dict(torch.load(PATH))
                 #print(loss_cal)
                 print("Finished one epoch and Testing!!")
                 if SENNA:
-                    get_results('text/train_ner_bilstm_cnn', model, training_data, y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
+                    # get_results('text/train_ner_bilstm_cnn', model, training_data, y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
                     get_results('text/test_ner_bilstm_cnn', model, test_X, test_y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
                 else:
-                    # get_results('glove_text/train_ner_bilstm_cnn', model, training_data, y, ind, idx_to_tag, word_to_ix, tag_to_ix,char_to_ix, CNN, use_gpu)
-                    get_results('pos_glove_text/dev_ner_bilstm_cnn', model, dev_X, dev_y, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
+                    # get_results('pos_glove_text/train_ner_bilstm_cnn', model, training_data, y, ind, idx_to_tag, word_to_ix, tag_to_ix,char_to_ix, CNN, use_gpu)
+                    # get_results('pos_glove_text/dev_ner_bilstm_cnn', model, dev_X, dev_y, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
                     get_results('pos_glove_text/test_ner_bilstm_cnn', model, test_X, test_y, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
 
         print('Epoch {} took {:.3f}s'.format(epoch,time.time() - last_time))

@@ -12,6 +12,7 @@ Usage:
 ======
 ## NER:
 This command will run the model on a gpu using CUDA, if you would like to run the model without CUDA then in ner_train.py change the 'use_gpu = 1' line after the imports at the top to 'use_gpu = 0'
+
   python ner_train.py
 
 ## POS:

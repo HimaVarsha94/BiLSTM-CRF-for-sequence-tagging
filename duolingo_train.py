@@ -217,7 +217,7 @@ def load_duolingo(train=False, test=False):
         with open('./data/duolingo/test_data_labels.txt', 'rb') as f:
             all_data_labels = pickle.load(f)
         return all_data, all_data_labels
-        
+
     import pdb; pdb.set_trace()
 
 
@@ -237,7 +237,6 @@ def main():
 
     training_data, y = load_duolingo(train=True)
     test_X, test_y = load_duolingo(test=True)
-    dev_X, dev_y = load_duolingo(dev=True)
 
     char_to_ix = char_dict(training_data)
     tag_to_ix, idx_to_tag = tag_indices(training_data, y)

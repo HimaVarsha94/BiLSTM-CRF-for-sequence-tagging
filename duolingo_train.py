@@ -239,11 +239,10 @@ def compute_f1(actual, predicted):
         precision = true_positives / (true_positives + false_positives)
         recall = true_positives / (true_positives + false_negatives)
         F1 = 2 * precision * recall / (precision + recall)
+        print('Precision: ', precision)
+        print('Recall: ', recall)
     except ZeroDivisionError:
         F1 = 0.0
-
-    print('Precision: ', precision)
-    print('Recall: ', recall)
 
     return F1
 
@@ -395,7 +394,7 @@ def main():
                     get_results('pos_glove_text/test_ner_bilstm_cnn', model, test_X, test_y, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
                 print('Elapsed time in epoch: {}'.format(str(timedelta(seconds=int(time.time()-last_time)))))
 
-        print('Epoch {} took {}'.format(str(epoch, timedelta(seconds=int(time.time()-last_time)))))
+        print('Epoch {} took {}'.format(epoch, str(timedelta(seconds=int(time.time()-last_time)))))
         get_results('pos_glove_text/train_ner_bilstm_cnn', model, training_data, y, ind, idx_to_tag, word_to_ix, tag_to_ix,char_to_ix, CNN, use_gpu)
         last_time = time.time()
 

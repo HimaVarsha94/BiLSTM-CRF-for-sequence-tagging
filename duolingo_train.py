@@ -382,7 +382,7 @@ def main():
 
             # if count % 1000 == 0 and ((count > 20000 and epoch==0) or (epoch!=0)):
             if count % (len(indices)//8) == 0:
-                print(loss_cal)
+                print('NLL Loss: {:.4f}'.format(float(loss_cal)))
                 loss_cal = 0
                 print('Epoch: {}, Sample: {}'.format(epoch, count))
                 if SENNA:

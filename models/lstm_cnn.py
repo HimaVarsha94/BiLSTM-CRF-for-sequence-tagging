@@ -119,8 +119,8 @@ class BILSTM_CNN(nn.Module):
         feats = self.forward_lstm(sentence, chars, caps, drop_prob)
         return self.crf.neg_ll_loss(sentence, gold_labels, feats)
 
-    def forward(self, sentence, chars, drop_prob):
-        feats = self.forward_lstm(sentence, chars, drop_prob)
+    def forward(self, sentence, chars, caps, drop_prob):
+        feats = self.forward_lstm(sentence, chars, caps, drop_prob)
         score, tag_seq = self.crf.forward(sentence, feats)
 
         return score, tag_seq

@@ -4,7 +4,10 @@ chunking_models/*
 models/ner_models/*
 text/*
 .DS_Store
-
 glove_text/
-
 __pycache__/
+pos_glove_text/*
+models/duolingo_models/*
+models/pos_models/char_to_ix.pkl
+models/pos_models/tag_to_idx
+embeddings/*

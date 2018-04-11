@@ -10,8 +10,14 @@ from models.lstm_cnn import BILSTM_CNN
 # from models.bilstm_crf_cnn import BiLSTM_CRF_CNN
 from sklearn.metrics import f1_score, precision_score, recall_score, roc_curve
 from random import shuffle
+from datetime import timedelta
 #torch.cuda.set_device(3)
 # torch.manual_seed(1)
+
+
+START_TAG = '<START>'
+END_TAG = '<END>'
+use_gpu = 0
 
 def cap_feature(s):
     if s.lower() == s:
@@ -33,9 +39,9 @@ def get_embeddings_matrix(data):
 
     with open('./models/duolingo_models/word_to_ix.pkl', 'wb') as f:
         pickle.dump(word_to_ix, f)
-        
+
     #this contains a list of all senna obj embeddings
-    with open('./embeddings/senna_obj.pkl', 'rb') as f:
+    with open('./senna_embeddings/senna_obj.pkl', 'rb') as f:
         senna_obj = pickle.load(f)
     #embeddings matrix with each row corresponding to a word to pass to nn.embedding layer
     embeddings_mat = np.zeros((len(word_to_ix), 50))
@@ -192,29 +198,71 @@ def get_results(filename, model, data_X, data_Y, epoch, idx_to_tag, word_to_ix, 
 
             total += targets.size(0)
             for tag_ in range(len(sentence)):
-                f.write(sentence[tag_] + " " + tags[tag_]+" "+idx_to_tag[predicted[tag_]]+"\n")
+                f.write(sentence[tag_] + " " + str(tags[tag_])+" "+str(idx_to_tag[predicted[tag_]])+"\n")
             f.write("\n")
-    print("F1 score is ", f1_score(all_targets, all_predicted))
-    fpr, tpr, thresholds = roc_curve(all_targets, all_predicted, pos_label=1)
-    print("ROC values ", fpr, tpr)
+
+    ## Translate sequences into binary labels (0 correct 1 wrong)
+    gold_labels = torch.cat(all_targets).data - 2
+    pred_labels = torch.cat(all_predicted) - 2
+
+    ## get actual binary labels for F1
+    with open('./data/duolingo/dev_binary_labels.pkl', 'rb') as f:
+        gold_binary_labels = pickle.load(f)
+
+    print("F1 score is ", compute_f1(gold_labels, pred_labels))
     print("Accuracy is ", float(correct)/total)
+
+
+""" acc and f1 score code provided by duolingo, slightly modified since we don't have probabilities for each label """
+def compute_f1(actual, predicted):
+    """
+    Computes the F1 score of your predictions. Note that we use 0.5 as the cutoff here.
+    """
+    num = len(actual)
+
+    true_positives = 0
+    false_positives = 0
+    false_negatives = 0
+    true_negatives = 0
+
+    for i in range(num):
+        if actual[i] >= 0.5 and predicted[i] >= 0.5:
+            true_positives += 1
+        elif actual[i] < 0.5 and predicted[i] >= 0.5:
+            false_positives += 1
+        elif actual[i] >= 0.5 and predicted[i] < 0.5:
+            false_negatives += 1
+        else:
+            true_negatives += 1
+
+    try:
+        precision = true_positives / (true_positives + false_positives)
+        recall = true_positives / (true_positives + false_negatives)
+        F1 = 2 * precision * recall / (precision + recall)
+    except ZeroDivisionError:
+        F1 = 0.0
+
+    print('Precision: ', precision)
+    print('Recall: ', recall)
+
+    return F1
 
 
 def load_duolingo(train=False, test=False):
 
     if train == True:
-        with open('./data/duolingo/train_data.txt', 'rb') as f:
+        with open('./data/duolingo/train_data.pkl', 'rb') as f:
             all_data = pickle.load(f)
         print("all_data_length "+str(len(all_data)))
-        with open('./data/duolingo/train_data_labels.txt', 'rb') as f:
+        with open('./data/duolingo/train_data_labels.pkl', 'rb') as f:
             all_data_labels = pickle.load(f)
         return all_data, all_data_labels
 
     if test == True:
-        with open('./data/duolingo/test_data.txt', 'rb') as f:
+        with open('./data/duolingo/dev_data.pkl', 'rb') as f:
             all_data = pickle.load(f)
         print("all_data_length "+str(len(all_data)))
-        with open('./data/duolingo/test_data_labels.txt', 'rb') as f:
+        with open('./data/duolingo/dev_data_labels.pkl', 'rb') as f:
             all_data_labels = pickle.load(f)
         return all_data, all_data_labels
 
@@ -223,6 +271,7 @@ def load_duolingo(train=False, test=False):
 
 def adjust_learning_rate(optimizer, epoch, LR):
     lr = LR / (1 + 0.5*epoch)
+    print('New learning rate: {:.3f}'.format(lr))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
@@ -269,7 +318,7 @@ def main():
     parameters = model.parameters()
     # parameters = filter(lambda p: model.requires_grad, model.parameters())
     # optimizer = optim.Adam(parameters, lr=0.001)
-    learning_rate = 0.01
+    learning_rate = 0.005
     optimizer = optim.SGD(parameters, lr=learning_rate)
 
     len_train = len(training_data)
@@ -281,11 +330,11 @@ def main():
     indices =[i for i in range(len_train)]
     shuffle(indices)
     last_time = time.time()
-    fake_count = 0
+    lr_adjust_counter = -1
     for epoch in range(500):
         loss_cal = 0.0
-        count = 0
-        for ind in (indices):
+        count = -1
+        for ind in indices:
             count += 1
             sentence = training_data[ind]
             tags = y[ind]
@@ -327,10 +376,16 @@ def main():
                 loss.backward()
 
             optimizer.step()
-            if count % 1000 == 0 and ((count > 20000 and epoch==0) or (epoch!=0)):
+
+            if count % (len(indices)//8) == 0:
+                lr_adjust_counter += 1
+                adjust_learning_rate(optimizer, lr_adjust_counter, learning_rate)
+
+            # if count % 1000 == 0 and ((count > 20000 and epoch==0) or (epoch!=0)):
+            if count % (len(indices)//8) == 0:
                 print(loss_cal)
                 loss_cal = 0
-                print(count, epoch)
+                print('Epoch: {}, Sample: {}'.format(epoch, count))
                 if SENNA:
                     # get_results('text/train_ner_bilstm_cnn', model, training_data, y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
                     get_results('text/test_ner_bilstm_cnn', model, test_X, test_y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
@@ -338,12 +393,10 @@ def main():
                     # get_results('pos_glove_text/train_ner_bilstm_cnn', model, training_data, y, ind, idx_to_tag, word_to_ix, tag_to_ix,char_to_ix, CNN, use_gpu)
                     # get_results('pos_glove_text/dev_ner_bilstm_cnn', model, dev_X, dev_y, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
                     get_results('pos_glove_text/test_ner_bilstm_cnn', model, test_X, test_y, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
-            if count == 0 or count == 20000:
-                fake_count += 1
-                print("Annealing")
-                adjust_learning_rate(optimizer, fake_count, learning_rate)
+                print('Elapsed time in epoch: {}'.format(str(timedelta(seconds=int(time.time()-last_time)))))
 
-        print('Epoch {} took {:.3f}s'.format(epoch,time.time() - last_time))
+        print('Epoch {} took {}'.format(str(epoch, timedelta(seconds=int(time.time()-last_time)))))
+        get_results('pos_glove_text/train_ner_bilstm_cnn', model, training_data, y, ind, idx_to_tag, word_to_ix, tag_to_ix,char_to_ix, CNN, use_gpu)
         last_time = time.time()
 
 if __name__ == '__main__':

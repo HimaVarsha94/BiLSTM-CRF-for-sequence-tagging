@@ -23,16 +23,17 @@ with open(DATA_PATH + 'en_es.slam.20171218.train', 'r') as f:
             sent.append(tokens[1])
             y.append(int(tokens[-1]))
 
-with open(DATA_PATH + 'train_data.pkl', 'wb') as f:
+with open('../data/duolingo/train_data.pkl', 'wb') as f:
     pickle.dump(X, f)
 
-with open(DATA_PATH + 'train_data_labels.pkl', 'wb') as f:
+with open('../data/duolingo/train_data_labels.pkl', 'wb') as f:
     pickle.dump(Y, f)
 
 
 """ DEV """
 X = []
 Y = []
+keys = []
 user = 0
 
 ## DEV labels are in separate file
@@ -53,10 +54,10 @@ with open(DATA_PATH + 'en_es.slam.20171218.dev', 'r') as f_data:
                 sent.append(tokens[1])
                 y.append(label)
 
-with open(DATA_PATH + 'dev_data.pkl', 'wb') as f:
+with open('../data/duolingo/dev_data.pkl', 'wb') as f:
     pickle.dump(X, f)
 
-with open(DATA_PATH + 'dev_data_labels.pkl', 'wb') as f:
+with open('../data/duolingo/dev_data_labels.pkl', 'wb') as f:
     pickle.dump(Y, f)
 
 # print("num positive "+str(len([yy for yy in y for y in Y if yy==1])))

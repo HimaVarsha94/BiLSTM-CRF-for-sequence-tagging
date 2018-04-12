@@ -22,6 +22,8 @@ with open(DATA_PATH + 'en_es.slam.20171218.train', 'r') as f:
         elif len(tokens) == 7:
             sent.append(tokens[1])
             y.append(int(tokens[-1]))
+    X.append(sent)
+    Y.append(y)
 
 with open('../data/duolingo/train_data.pkl', 'wb') as f:
     pickle.dump(X, f)
@@ -53,7 +55,9 @@ with open(DATA_PATH + 'en_es.slam.20171218.dev', 'r') as f_data:
                 label = int(f_labels.readline().split()[1])
                 sent.append(tokens[1])
                 y.append(label)
-
+        X.append(sent)
+        Y.append(y)
+        
 with open('../data/duolingo/dev_data.pkl', 'wb') as f:
     pickle.dump(X, f)
 

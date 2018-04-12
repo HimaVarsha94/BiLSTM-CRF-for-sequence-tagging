@@ -123,7 +123,6 @@ def get_results(filename, model, data_X, data_Y, test_feats, epoch, idx_to_tag, 
             sentence_in = prepare_sequence(sentence, word_to_ix)
             targets = prepare_sequence(tags, tag_to_ix, tag=True)
             stud_id = test_feats[ind]
-            import pdb; pdb.set_trace()
             student_ids = autograd.Variable(torch.LongTensor([sid_idx[stud_id]]*len(sentence)))
 
             if use_gpu:
@@ -242,7 +241,6 @@ def main():
     test_X, test_y = load_duolingo(test=True)
     sid_idx = extract_student_id()
     training_feats, test_feats = load_features()
-    import pdb; pdb.set_trace()
 
     char_to_ix = char_dict(training_data)
     tag_to_ix, idx_to_tag = tag_indices(training_data, y)
@@ -298,7 +296,6 @@ def main():
 
             tags = y[ind]
             model.zero_grad()
-            import pdb; pdb.set_trace()
             # THIS NOW HAPPENS IN FORWARD
             sentence_in = prepare_sequence(sentence, word_to_ix)
             caps = autograd.Variable(torch.LongTensor([cap_feature(w) for w in sentence]))
@@ -310,7 +307,6 @@ def main():
                 char_in = prepare_words(sentence, char_to_ix)
                 # char_in = data['chars']
                 char_em = char_emb(char_in)
-                # import pdb; pdb.set_trace()
                 if use_gpu:
                     nll = model.neg_ll_loss(sentence_in.cuda(), targets, char_em.cuda(), caps.cuda(), student_ids.cuda(), 0.5)
                 else:

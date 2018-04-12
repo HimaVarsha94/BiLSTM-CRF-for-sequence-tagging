@@ -164,7 +164,7 @@ def get_results(filename, model, data_X, data_Y, epoch, idx_to_tag, word_to_ix, 
 
     len_test = len(data_X)
     print("Testing length", len_test)
-    fname = filename+ str(epoch)+'.txt'
+    fname = filename + str(epoch) + '.txt'
     with open(fname,'w') as f:
         for ind in range(len_test):
             sentence = data_X[ind]

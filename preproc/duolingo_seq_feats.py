@@ -17,6 +17,9 @@ session: the session type (one of: lesson, practice, or test; explanation below)
 format: the exercise format (one of: reverse_translate, reverse_tap, or listen; see figures above)
 time: the amount of time (in seconds) it took for the student to construct and
 submit their whole answer (note: for some exercises, this can be null due to data logging issues)
+
+Note: Train (293 unique users) and dev (292) sets have the exact same users except for
+'aZwloMi1', who only appears in train
 """
 
 DATA_PATH = '/Users/gosha/Desktop/data/duolingo_data/data_en_es/'

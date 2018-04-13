@@ -282,7 +282,7 @@ def main():
     print("Number of test sentences ", len_test)
     print('Training...')
 
-    
+
     last_time = time.time()
     lr_adjust_counter = -1
     for epoch in range(500):
@@ -334,7 +334,7 @@ def main():
 
             # if count % 1000 == 0 and ((count > 20000 and epoch==0) or (epoch!=0)):
             if count % (len(indices)//8) == 0:
-                print('NLL Loss: {:.4f}'.format(float(loss_cal)))
+                print('NLL Loss: {}'.format(float(loss_cal)))
                 loss_cal = 0
                 print('Epoch: {}, Sample: {}'.format(epoch, count))
                 if SENNA:

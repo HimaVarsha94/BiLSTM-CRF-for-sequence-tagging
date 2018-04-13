@@ -19,7 +19,7 @@ class BILSTM_CNN(nn.Module):
         self.hidden_dim = hidden_dim
         self.n_cap = 4
         self.word_embeddings = nn.Embedding(vocab_size, embedding_dim)
-        self.duolingo_student = duolingo_student        
+        self.duolingo_student = duolingo_student
         self.word_embeddings.weight.data.copy_(torch.from_numpy(pretrained_weight_embeddings))
         #CHAR
         self.cap_embedding_dim = 25
@@ -30,7 +30,7 @@ class BILSTM_CNN(nn.Module):
         if duolingo_student:
             #TODO change the student_id_unique
             self.student_id_unique = 2593
-            self.student_id_dim = 25
+            self.student_id_dim = 100
             self.student_embeds = nn.Embedding(self.student_id_unique, self.student_id_dim)
             b = np.sqrt(3.0 / self.student_embeds.weight.size(1))
             nn.init.uniform(self.student_embeds.weight, -b, b)

@@ -165,6 +165,7 @@ def get_results(filename, model, data_X, data_Y, test_feats, epoch, idx_to_tag, 
 
     print("F1 score is ", compute_f1(gold_labels, pred_labels))
     print("Accuracy is ", float(correct)/total)
+    print('AUROC: ', compute_auroc(gold_labels, pred_labels))
 
 
 """ acc and f1 score code provided by duolingo, slightly modified since we don't have probabilities for each label """
@@ -201,6 +202,41 @@ def compute_f1(actual, predicted):
     return F1
 
 
+def compute_auroc(actual, predicted):
+    """
+    Computes the area under the receiver-operator characteristic curve.
+    This code a rewriting of code by Ben Hamner, available here:
+    https://github.com/benhamner/Metrics/blob/master/Python/ml_metrics/auc.py
+    """
+    # import pdb; pdb.set_trace()
+    num = len(actual)
+    temp = sorted([[predicted[i], actual[i]] for i in range(num)], reverse=True)
+
+    sorted_predicted = [row[0] for row in temp]
+    sorted_actual = [row[1] for row in temp]
+
+    sorted_posterior = sorted(zip(sorted_predicted, range(len(sorted_predicted))))
+    r = [0 for k in sorted_predicted]
+    cur_val = sorted_posterior[0][0]
+    last_rank = 0
+    for i in range(len(sorted_posterior)):
+        if cur_val != sorted_posterior[i][0]:
+            cur_val = sorted_posterior[i][0]
+            for j in range(last_rank, i):
+                r[sorted_posterior[j][1]] = float(last_rank+1+i)/2.0
+            last_rank = i
+        if i==len(sorted_posterior)-1:
+            for j in range(last_rank, i+1):
+                r[sorted_posterior[j][1]] = float(last_rank+i+2)/2.0
+
+    num_positive = len([0 for x in sorted_actual if x == 1])
+    num_negative = num - num_positive
+    sum_positive = sum([r[i] for i in range(len(r)) if sorted_actual[i] == 1])
+    auroc = ((sum_positive - num_positive * (num_positive + 1) / 2.0) / (num_negative * num_positive))
+
+    return auroc
+
+
 def load_duolingo(train=False, test=False):
 
     if train == True:
@@ -230,7 +266,7 @@ def adjust_learning_rate(optimizer, epoch, LR):
 
 def main():
 
-    USE_CRF = False
+    USE_CRF = True
     HIDDEN_DIM = 200
     CNN = True
     SENNA = False
@@ -257,13 +293,14 @@ def main():
         print("Bilstm")
         model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix))#, emb_mat, USE_CRF, BIDIRECTIONAL=True)
     if CNN == True and USE_CRF == False:
+        bilstm_crf_cnn_flag = False
+        print('Using BiLSTM-CNN')
+        model = BILSTM_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, tag_to_ix, CNN=True, BIDIRECTIONAL=True, use_gpu=use_gpu, duolingo_student=True)
+    if CNN == True and USE_CRF == True:
         print("Using BiLSTM-CNN-CRF")
         bilstm_crf_cnn_flag = True
         model = BILSTM_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, tag_to_ix, CNN=True, BIDIRECTIONAL=True, use_gpu=use_gpu, duolingo_student=True)
-    if CNN == True and USE_CRF == True:
-        bilstm_crf_cnn_flag = True
-        print('Using BiLSTM-CRF-CNN')
-        model = BiLSTM_CRF_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, tag_to_ix, USE_CRF, BIDIRECTIONAL, False, 0, CNN, use_gpu)
+
 
     if use_gpu:
         model = model.cuda()
@@ -328,12 +365,13 @@ def main():
 
             optimizer.step()
 
-            if count % (len(indices)//8) == 0:
+            if count != 0 and count % (len(indices)//8) == 0:
                 lr_adjust_counter += 1
                 adjust_learning_rate(optimizer, lr_adjust_counter, learning_rate)
 
             # if count % 1000 == 0 and ((count > 20000 and epoch==0) or (epoch!=0)):
-            if count % (len(indices)//8) == 0:
+            # if count % (len(indices)//8) == 0:
+            if count % 1 == 0:
                 print('NLL Loss: {}'.format(float(loss_cal)))
                 loss_cal = 0
                 print('Epoch: {}, Sample: {}'.format(epoch, count))

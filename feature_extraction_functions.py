@@ -35,8 +35,10 @@ def cap_feature(s):
         return 3
 
 def tag_indices(X, y):
-    tag_to_idx = {START_TAG: 0, END_TAG: 1}
-    idx_to_tag = {0: START_TAG, 1: END_TAG}
+    # tag_to_idx = {START_TAG: 0, END_TAG: 1}
+    # idx_to_tag = {0: START_TAG, 1: END_TAG}
+    tag_to_idx = {}
+    idx_to_tag = {}
     for sent_tag in y:
         for tag in sent_tag:
             if tag not in tag_to_idx:

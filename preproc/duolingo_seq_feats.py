@@ -22,12 +22,12 @@ Note: Train (293 unique users) and dev (292) sets have the exact same users exce
 'aZwloMi1', who only appears in train
 """
 
-DATA_PATH = '/Users/gosha/Desktop/data/duolingo_data/data_en_es/'
+DATA_PATH = '/Users/gosha/Desktop/data/duolingo_data/data_es_en/'
 
 """ TRAIN """
 feats = defaultdict(list)
 
-with open(DATA_PATH + 'en_es.slam.20171218.train', 'r') as f:
+with open(DATA_PATH + 'es_en.slam.20171218.train', 'r') as f:
     keys = []
     for line in f:
         tokens = line.split()
@@ -40,8 +40,7 @@ with open(DATA_PATH + 'en_es.slam.20171218.train', 'r') as f:
             for k,v in zip(keys,vals):
                 feats[k].append(v)
 
-
-with open('../data/duolingo/train_seq_feats.pkl', 'wb') as f:
+with open('../data/duolingo/es_en_train_seq_feats.pkl', 'wb') as f:
     pickle.dump(feats, f)
 
 
@@ -49,7 +48,7 @@ with open('../data/duolingo/train_seq_feats.pkl', 'wb') as f:
 feats = defaultdict(list)
 
 ## DEV labels are in separate file
-with open(DATA_PATH + 'en_es.slam.20171218.dev', 'r') as f:
+with open(DATA_PATH + 'es_en.slam.20171218.dev', 'r') as f:
     keys = []
     for line in f:
         tokens = line.split()
@@ -62,5 +61,5 @@ with open(DATA_PATH + 'en_es.slam.20171218.dev', 'r') as f:
             for k,v in zip(keys,vals):
                 feats[k].append(v)
 
-with open('../data/duolingo/dev_seq_feats.pkl', 'wb') as f:
+with open('../data/duolingo/es_en_dev_seq_feats.pkl', 'wb') as f:
     pickle.dump(feats, f)

@@ -63,9 +63,9 @@ class BILSTM_CNN(nn.Module):
         # else:
         #     self.hidden2tag = nn.Linear(hidden_dim, tagset_size)
 
-        self.crf = CRF(tagset_size, tag_to_ix, self.use_gpu)
-        if self.use_gpu:
-            self.crf = self.crf.cuda()
+        # self.crf = CRF(tagset_size, tag_to_ix, self.use_gpu)
+        # if self.use_gpu:
+        #     self.crf = self.crf.cuda()
         if self.bidirectional:
             self.hidden2tag = nn.Linear(2*hidden_dim, tagset_size)
             b = np.sqrt(6.0 / (self.hidden2tag.weight.size(0) + self.hidden2tag.weight.size(1)))
@@ -73,6 +73,7 @@ class BILSTM_CNN(nn.Module):
             self.hidden2tag.bias.data.zero_()
         else:
             self.hidden2tag = nn.Linear(hidden_dim, tagset_size)
+        # import pdb; pdb.set_trace()
 
     def init_hidden(self):
         if self.use_gpu:
@@ -128,8 +129,9 @@ class BILSTM_CNN(nn.Module):
         else:
             tag_space = self.hidden2tag(lstm_out.view(len(sentence), -1))
 
-        # tag_scores = F.log_softmax(tag_space, dim=1)
-        return tag_space
+        tag_scores = F.softmax(tag_space, dim=1)
+        # import pdb; pdb.set_trace()
+        return tag_scores
 
 
     def neg_ll_loss(self, sentence, gold_labels, chars, caps, sid_emb, drop_prob):
@@ -137,7 +139,10 @@ class BILSTM_CNN(nn.Module):
         return self.crf.neg_ll_loss(sentence, gold_labels, feats)
 
     def forward(self, sentence, chars, caps, sid_emb, drop_prob):
-        feats = self.forward_lstm(sentence, chars, caps, sid_emb, drop_prob)
-        score, tag_seq = self.crf.forward(sentence, feats)
+        # feats = self.forward_lstm(sentence, chars, caps, sid_emb, drop_prob)
+        # score, tag_seq = self.crf.forward(sentence, feats)
 
-        return score, tag_seq
+        scores = self.forward_lstm(sentence, chars, caps, sid_emb, drop_prob)
+
+        # return score, tag_seq
+        return scores

@@ -25,7 +25,7 @@ class BILSTM_CNN(nn.Module):
         self.cap_embedding_dim = 25
         self.cap_embeds = nn.Embedding(self.n_cap, self.cap_embedding_dim)
         b = np.sqrt(3.0 / self.cap_embeds.weight.size(1))
-        nn.init.uniform(self.cap_embeds.weight, -b, b)
+        nn.init.uniform_(self.cap_embeds.weight, -b, b)
 
         if duolingo_student:
             #TODO change the student_id_unique
@@ -33,14 +33,14 @@ class BILSTM_CNN(nn.Module):
             self.student_id_dim = 100
             self.student_embeds = nn.Embedding(self.student_id_unique, self.student_id_dim)
             b = np.sqrt(3.0 / self.student_embeds.weight.size(1))
-            nn.init.uniform(self.student_embeds.weight, -b, b)
+            nn.init.uniform_(self.student_embeds.weight, -b, b)
 
         if self.CNN:
             print("Entered!!!!")
             self.char_embeds = nn.Embedding(char_size, self.char_dim)
             #as given in the paper, initialising
             b = np.sqrt(3.0 / self.char_embeds.weight.size(1))
-            nn.init.uniform(self.char_embeds.weight, -b, b)
+            nn.init.uniform_(self.char_embeds.weight, -b, b)
 
             # self.init_embedding(self.char_embeds.weight)
             self.char_cnn = nn.Conv2d(in_channels=1, out_channels=self.char_lstm_dim, kernel_size=(3, self.char_dim), padding=(2,0))
@@ -69,7 +69,7 @@ class BILSTM_CNN(nn.Module):
         if self.bidirectional:
             self.hidden2tag = nn.Linear(2*hidden_dim, tagset_size)
             b = np.sqrt(6.0 / (self.hidden2tag.weight.size(0) + self.hidden2tag.weight.size(1)))
-            nn.init.uniform(self.hidden2tag.weight, -b, b)
+            nn.init.uniform_(self.hidden2tag.weight, -b, b)
             self.hidden2tag.bias.data.zero_()
         else:
             self.hidden2tag = nn.Linear(hidden_dim, tagset_size)

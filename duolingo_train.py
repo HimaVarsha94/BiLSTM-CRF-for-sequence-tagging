@@ -10,12 +10,12 @@ from sklearn.metrics import f1_score, precision_score, recall_score, roc_curve
 from random import shuffle
 from datetime import timedelta
 from feature_extraction_functions import *
-#torch.cuda.set_device(3)
+torch.cuda.set_device(1)
 # torch.manual_seed(1)
 
 START_TAG = '<START>'
 END_TAG = '<END>'
-use_gpu = 0
+use_gpu = 1
 
 
 def get_embeddings_matrix(data):
@@ -143,12 +143,11 @@ def get_results(filename, model, data_X, data_Y, test_feats, epoch, idx_to_tag, 
             else:
                 tag_scores = model(sentence_in)
                 prob, predicted = torch.max(tag_scores.data, 1)
-
             if use_gpu:
-                all_predicted = all_predicted + (autograd.Variable(predicted).data.cpu().numpy().tolist())
-                all_targets = all_targets + (targets.data.cpu().numpy().tolist())
+                all_predicted += tag_scores.data.cpu().numpy()[:,1].tolist()
+                all_targets += (targets.data.cpu().numpy().tolist())
             else:
-                all_predicted.append(predicted)
+                all_predicted.append(tag_scores.data.numpy()[:,1].tolist())
                 all_targets.append(targets)
             if use_gpu:
                 correct += (predicted.cuda() == targets.data).sum()
@@ -156,9 +155,11 @@ def get_results(filename, model, data_X, data_Y, test_feats, epoch, idx_to_tag, 
                 correct += (predicted == targets.data).sum()
 
             total += targets.size(0)
-            for tag_ in range(len(sentence)):
-                f.write(sentence[tag_] + " " + str(tags[tag_])+" "+str(idx_to_tag[predicted[tag_]])+"\n")
-            f.write("\n")
+            #for tag_ in range(len(sentence)):
+            #    f.write(sentence[tag_] + " " + str(tags[tag_])+" "+str(idx_to_tag[predicted[tag_]])+"\n")
+            #f.write("\n")
+            del sentence, tags, sentence_in, stud_id, student_ids, caps,
+            char_in, char_em, prob, predicted
 
     ## Translate sequences into binary labels (0 correct 1 wrong)
     # gold_labels = torch.cat(all_targets).data - 2
@@ -167,10 +168,10 @@ def get_results(filename, model, data_X, data_Y, test_feats, epoch, idx_to_tag, 
     ## get actual binary labels for F1
     # with open('./data/duolingo/dev_binary_labels.pkl', 'rb') as f:
     #     gold_binary_labels = pickle.load(f)
-
-    print("F1 score is ", compute_f1(targets.data, tag_scores.data[:,0]))
+    print('Len all_predicted: {}'.format(len(all_predicted)))
+    print("F1 score is ", compute_f1(all_targets, all_predicted))
     print("Accuracy is ", float(correct)/total)
-    print('AUROC: ', compute_auroc(targets.data, tag_scores.data[:,0]))
+    print('AUROC: ', compute_auroc(all_targets, all_predicted))
 
 
 """ acc and f1 score code provided by duolingo, slightly modified since we don't have probabilities for each label """
@@ -336,6 +337,7 @@ def main():
         for ind in indices:
             count += 1
             sentence = training_data[ind]
+            #print(count,ind)
 
             tags = y[ind]
             model.zero_grad()
@@ -360,24 +362,29 @@ def main():
             elif CNN:
                 char_in = prepare_words(sentence, char_to_ix)
                 char_em = char_emb(char_in)
-                tag_scores = model(sentence_in, char_em, caps, student_ids, 0.5)
+                if use_gpu:
+                    tag_scores = model(sentence_in.cuda(), char_em.cuda(),
+                            caps.cuda(), student_ids.cuda(), 0.5)
+                else:
+                    tag_scores = model(sentence_in, char_em, caps, student_ids, 0.5)
             else:
                 tag_scores = model(sentence_in)
 
             if not bilstm_crf_cnn_flag:
-                loss = loss_function(torch.log(tag_scores), autograd.Variable(targets))
+                loss = loss_function(torch.log(tag_scores),
+                        autograd.Variable(targets).cuda())
                 loss_cal += loss
                 loss.backward()
 
             optimizer.step()
 
-            if count != 0 and count % (len(indices)//8) == 0:
+            if count != 0 and count % (len(indices)//1) == 0:
                 lr_adjust_counter += 1
                 adjust_learning_rate(optimizer, lr_adjust_counter, learning_rate)
 
             # if count % 1000 == 0 and ((count > 20000 and epoch==0) or (epoch!=0)):
-            if count != 0 and count % (len(indices)//8) == 0:
-            # if count != 0 and count % 50000 == 0:
+            if count != 0 and count % (len(indices)//2) == 0:
+            #if count != 0 and count % 1 == 0:
             # if epoch != 0 and count == 0:
                 print('NLL Loss: {}'.format(float(loss_cal)))
                 loss_cal = 0
@@ -391,8 +398,12 @@ def main():
                     get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, test_X, test_y, test_feats, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
                 print('Elapsed time in epoch: {}'.format(str(timedelta(seconds=int(time.time()-last_time)))))
 
+            del sentence, tag_scores, loss, char_in, char_em, student_ids,
+            stud_id, targets, caps, sentence_in, tags
+
         print('Epoch {} took {}'.format(epoch, str(timedelta(seconds=int(time.time()-last_time)))))
-        get_results('duolingo_glove_text/train_duolingo_bilstm_cnn', model, training_data, y, ind, idx_to_tag, word_to_ix, tag_to_ix,char_to_ix, CNN, use_gpu)
+        #get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, training_data, y, training_feats, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
+        get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, test_X, test_y, test_feats, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
         last_time = time.time()
 
 if __name__ == '__main__':

@@ -11,3 +11,4 @@ models/duolingo_models/*
 models/pos_models/char_to_ix.pkl
 models/pos_models/tag_to_idx
 embeddings/*
+duolingo_glove_text/*

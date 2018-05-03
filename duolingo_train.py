@@ -387,7 +387,7 @@ def main():
             #if count != 0 and count % 1 == 0:
             # if epoch != 0 and count == 0:
                 print('NLL Loss: {}'.format(float(loss_cal)))
-                loss_cal = 0
+                loss_cal = 0.
                 print('Epoch: {}, Sample: {}'.format(epoch, count))
                 if SENNA:
                     # get_results('text/train_ner_bilstm_cnn', model, training_data, y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)

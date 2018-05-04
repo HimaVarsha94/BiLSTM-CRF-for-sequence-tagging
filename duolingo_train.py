@@ -10,12 +10,12 @@ from sklearn.metrics import f1_score, precision_score, recall_score, roc_curve
 from random import shuffle
 from datetime import timedelta
 from feature_extraction_functions import *
-torch.cuda.set_device(1)
+# torch.cuda.set_device(1)
 # torch.manual_seed(1)
 
 START_TAG = '<START>'
 END_TAG = '<END>'
-use_gpu = 1
+use_gpu = 0
 
 
 def get_embeddings_matrix(data):
@@ -371,14 +371,18 @@ def main():
                 tag_scores = model(sentence_in)
 
             if not bilstm_crf_cnn_flag:
-                loss = loss_function(torch.log(tag_scores),
+                if use_gpu:
+                    loss = loss_function(torch.log(tag_scores),
                         autograd.Variable(targets).cuda())
+                else:
+                    loss = loss_function(torch.log(tag_scores),
+                        autograd.Variable(targets))
                 loss_cal += loss
                 loss.backward()
 
             optimizer.step()
 
-            if count != 0 and count % (len(indices)//1) == 0:
+            if count != 0 and count % (len(indices)//4) == 0:
                 lr_adjust_counter += 1
                 adjust_learning_rate(optimizer, lr_adjust_counter, learning_rate)
 

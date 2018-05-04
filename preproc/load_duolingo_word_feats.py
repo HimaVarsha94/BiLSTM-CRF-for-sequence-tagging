@@ -1,11 +1,12 @@
 import pickle
-from collections import Counter
+from collections import Counter, defaultdict
+
 
 ## helper function
 def replace_with_nums(data, vocab_list, pos_list, edge_label_list, edge_head_list, char_list):
     # max_word = 0
     for feats in data:
-        for i,w in enumerate(feats['words']):
+        for i, w in enumerate(feats['words']):
             if w in vocab_list:
                 ## no zeros allowed
                 feats['words'][i] = vocab_list.index(w) + 1
@@ -14,27 +15,26 @@ def replace_with_nums(data, vocab_list, pos_list, edge_label_list, edge_head_lis
             # if feats['words'][i] > max_word:
             #     max_word = feats['words'][i]
 
-
-        for i,edge_label in enumerate(feats['edge_labels']):
+        for i, edge_label in enumerate(feats['edge_labels']):
             if edge_label in edge_label_list:
                 feats['edge_labels'][i] = edge_label_list.index(edge_label) + 1
             else:
                 feats['edge_labels'][i] = len(edge_label_list) + 1
 
-        for i,pos in enumerate(feats['pos']):
+        for i, pos in enumerate(feats['pos']):
             if pos in pos_list:
                 feats['pos'][i] = pos_list.index(pos) + 1
             else:
                 feats['pos'][i] = len(pos_list) + 1
 
-        for i,word in enumerate(feats['chars']):
-            for j,c in enumerate(word):
+        for i, word in enumerate(feats['chars']):
+            for j, c in enumerate(word):
                 if c in char_list:
                     feats['chars'][i][j] = char_list.index(c) + 1
                 else:
                     feats['chars'][i][j] = len(char_list) + 1
 
-        for i,e_h in enumerate(feats['edge_heads']):
+        for i, e_h in enumerate(feats['edge_heads']):
             if e_h in edge_head_list:
                 feats['edge_heads'][i] = edge_head_list.index(e_h) + 1
             else:
@@ -44,22 +44,24 @@ def replace_with_nums(data, vocab_list, pos_list, edge_label_list, edge_head_lis
 
     return data
 
+
 def load_duolingo_word_feats(label):
     if label == 'train':
         with open('../data/duolingo/es_en_train_allfeats_lowered.pkl', 'rb') as f:
             all_data = pickle.load(f)
-        print("Train data length: "+str(len(all_data)))
+        print("Train data length: " + str(len(all_data)))
         with open('../data/duolingo/es_en_train_labels.pkl', 'rb') as f:
             all_data_labels = pickle.load(f)
 
     elif label == 'test' or label == 'dev':
         with open('../data/duolingo/es_en_dev_allfeats_lowered.pkl', 'rb') as f:
             all_data = pickle.load(f)
-        print("Dev data length: "+str(len(all_data)))
+        print("Dev data length: " + str(len(all_data)))
         with open('../data/duolingo/es_en_dev_labels.pkl', 'rb') as f:
             all_data_labels = pickle.load(f)
 
     return all_data, all_data_labels
+
 
 def process_duolingo_word_feats(train, test):
     vocab = Counter()
@@ -85,33 +87,68 @@ def process_duolingo_word_feats(train, test):
             max_seq_len = len(feats['words'])
 
         for e_h in feats['edge_heads']:
-            if int(e_h)+1 > max_edge_head:
-                max_edge_head = int(e_h)+1
+            if int(e_h) + 1 > max_edge_head:
+                max_edge_head = int(e_h) + 1
 
-    print('max seq len:',max_seq_len)
-    print('max char len:',max_char_len)
-    print('max edge head val:',max_edge_head)
+    print('max seq len:', max_seq_len)
+    print('max char len:', max_char_len)
+    print('max edge head val:', max_edge_head)
 
     for w in list(vocab):
         if vocab[w] < 5:
-            del(vocab[w])
+            del (vocab[w])
 
     vocab_list = [tup[0] for tup in vocab.most_common()]
-    pos_list = [tup[0] for tup in pos_vocab.most_common()]
-    edge_label_list = [tup[0] for tup in edge_label_vocab.most_common()]
-    char_list = [tup[0] for tup in char_vocab.most_common()]
-    edge_head_list = [tup[0] for tup in edge_head_vocab.most_common()]
+    with open('../data/duolingo/vocab_list.pkl', 'wb') as f:
+        i2t = dict()
+        for ind, token in enumerate(vocab_list):
+            i2t[ind + 1] = token
+        i2t[len(vocab_list) + 1] = "OOV"
+        pickle.dump(i2t, f)
 
-    print('Word vocab length (incl unk)', len(vocab_list)+2)
-    print('POS vocab length', len(pos_list)+2)
-    print('Edge label vocab length', len(edge_label_list)+2)
-    print('Edge head vocab length', len(edge_head_list)+2)
-    print('Character vocab length', len(char_list)+2)
+    pos_list = [tup[0] for tup in pos_vocab.most_common()]
+    with open('../data/duolingo/pos_list.pkl', 'wb') as f:
+        i2t = dict()
+        for ind, token in enumerate(pos_list):
+            i2t[ind + 1] = token
+        i2t[len(pos_list) + 1] = "OOV"
+        pickle.dump(i2t, f)
+
+    edge_label_list = [tup[0] for tup in edge_label_vocab.most_common()]
+    with open('../data/duolingo/edge_label_list.pkl', 'wb') as f:
+        i2t = dict()
+        for ind, token in enumerate(edge_label_list):
+            i2t[ind + 1] = token
+        i2t[len(edge_label_list) + 1] = "OOV"
+        pickle.dump(i2t, f)
+
+    char_list = [tup[0] for tup in char_vocab.most_common()]
+    with open('../data/duolingo/char_list.pkl', 'wb') as f:
+        i2t = dict()
+        for ind, token in enumerate(char_list):
+            i2t[ind + 1] = token
+        i2t[len(char_list) + 1] = "OOV"
+        pickle.dump(i2t, f)
+
+    edge_head_list = [tup[0] for tup in edge_head_vocab.most_common()]
+    with open('../data/duolingo/edge_head_list.pkl', 'wb') as f:
+        i2t = dict()
+        for ind, token in enumerate(edge_head_list):
+            i2t[ind + 1] = token
+        i2t[len(edge_head_list) + 1] = "OOV"
+        pickle.dump(i2t, f)
+
+    print('Word vocab length (incl unk)', len(vocab_list) + 2)
+    print('POS vocab length', len(pos_list) + 2)
+    print('Edge label vocab length', len(edge_label_list) + 2)
+    print('Edge head vocab length', len(edge_head_list) + 2)
+    print('Character vocab length', len(char_list) + 2)
 
     train = replace_with_nums(train, vocab_list, pos_list, edge_label_list, edge_head_list, char_list)
     test = replace_with_nums(test, vocab_list, pos_list, edge_label_list, edge_head_list, char_list)
 
     return train, test
+
 
 if __name__ == '__main__':
     train_data, train_labels = load_duolingo_word_feats('train')
@@ -119,7 +156,7 @@ if __name__ == '__main__':
     print(train_data[0])
     print(dev_data[0])
 
-    train_data, dev_data= process_duolingo_word_feats(train_data, dev_data)
+    train_data, dev_data = process_duolingo_word_feats(train_data, dev_data)
 
     print(train_data[0])
     print(dev_data[0])

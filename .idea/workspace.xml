@@ -2,9 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9e92f1ce-170e-44ec-8f64-519c64e9502c" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/preproc/duolingo_seq_feats.py" afterPath="$PROJECT_DIR$/preproc/duolingo_seq_feats.py" />
-      <change beforePath="$PROJECT_DIR$/preproc/duolingo_word_feats.py" afterPath="$PROJECT_DIR$/preproc/duolingo_word_feats.py" />
-      <change beforePath="$PROJECT_DIR$/preproc/load_duolingo_word_feats.py" afterPath="$PROJECT_DIR$/preproc/load_duolingo_word_feats.py" />
+      <change beforePath="$PROJECT_DIR$/preproc/duolingo_seq_feats.py" afterPath="$PROJECT_DIR$/preproc_for_cluf/duolingo_seq_feats.py" />
+      <change beforePath="$PROJECT_DIR$/preproc/duolingo_word_feats.py" afterPath="$PROJECT_DIR$/preproc_for_cluf/duolingo_word_feats.py" />
+      <change beforePath="$PROJECT_DIR$/preproc/extract_pos.py" afterPath="$PROJECT_DIR$/preproc_for_cluf/extract_pos.py" />
+      <change beforePath="$PROJECT_DIR$/preproc/extract_senna.py" afterPath="$PROJECT_DIR$/preproc_for_cluf/extract_senna.py" />
+      <change beforePath="$PROJECT_DIR$/preproc/load_duolingo_seq_feats.py" afterPath="$PROJECT_DIR$/preproc_for_cluf/load_duolingo_seq_feats.py" />
+      <change beforePath="$PROJECT_DIR$/preproc/load_duolingo_word_feats.py" afterPath="$PROJECT_DIR$/preproc_for_cluf/load_duolingo_word_feats.py" />
+      <change beforePath="$PROJECT_DIR$/preproc/order_data_by_length.py" afterPath="$PROJECT_DIR$/preproc_for_cluf/order_data_by_length.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -16,7 +20,7 @@
   <component name="FileEditorManager">
     <leaf>
       <file leaf-file-name="duolingo_seq_feats.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/preproc/duolingo_seq_feats.py">
+        <entry file="file://$PROJECT_DIR$/preproc_for_cluf/duolingo_seq_feats.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="125">
               <caret line="32" column="29" lean-forward="false" selection-start-line="32" selection-start-column="29" selection-end-line="32" selection-end-column="29" />
@@ -28,7 +32,7 @@
         </entry>
       </file>
       <file leaf-file-name="duolingo_word_feats.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/preproc/duolingo_word_feats.py">
+        <entry file="file://$PROJECT_DIR$/preproc_for_cluf/duolingo_word_feats.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="598">
               <caret line="67" column="30" lean-forward="false" selection-start-line="67" selection-start-column="25" selection-end-line="67" selection-end-column="30" />
@@ -49,11 +53,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="load_duolingo_word_feats.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/preproc/load_duolingo_word_feats.py">
+      <file leaf-file-name="load_duolingo_word_feats.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/preproc_for_cluf/load_duolingo_word_feats.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="392">
-              <caret line="107" column="0" lean-forward="true" selection-start-line="107" selection-start-column="0" selection-end-line="107" selection-end-column="0" />
+              <caret line="107" column="0" lean-forward="false" selection-start-line="107" selection-start-column="0" selection-end-line="107" selection-end-column="0" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -62,7 +66,7 @@
         </entry>
       </file>
       <file leaf-file-name="extract_pos.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/preproc/extract_pos.py">
+        <entry file="file://$PROJECT_DIR$/preproc_for_cluf/extract_pos.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="0">
               <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
@@ -73,11 +77,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="extract_senna.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/preproc/extract_senna.py">
+      <file leaf-file-name="extract_senna.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/preproc_for_cluf/extract_senna.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+            <state relative-caret-position="315">
+              <caret line="21" column="23" lean-forward="false" selection-start-line="21" selection-start-column="23" selection-end-line="21" selection-end-column="23" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -86,7 +90,7 @@
         </entry>
       </file>
       <file leaf-file-name="load_duolingo_seq_feats.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/preproc/load_duolingo_seq_feats.py">
+        <entry file="file://$PROJECT_DIR$/preproc_for_cluf/load_duolingo_seq_feats.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="570">
               <caret line="38" column="19" lean-forward="false" selection-start-line="38" selection-start-column="8" selection-end-line="38" selection-end-column="19" />
@@ -98,10 +102,10 @@
         </entry>
       </file>
       <file leaf-file-name="order_data_by_length.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/preproc/order_data_by_length.py">
+        <entry file="file://$PROJECT_DIR$/preproc_for_cluf/order_data_by_length.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="975">
-              <caret line="66" column="22" lean-forward="true" selection-start-line="66" selection-start-column="22" selection-end-line="66" selection-end-column="22" />
+              <caret line="66" column="22" lean-forward="false" selection-start-line="66" selection-start-column="22" selection-end-line="66" selection-end-column="22" />
               <folding />
             </state>
           </provider>
@@ -118,6 +122,7 @@
         <option value="$PROJECT_DIR$/preproc/duolingo_seq_feats.py" />
         <option value="$PROJECT_DIR$/preproc/load_duolingo_word_feats.py" />
         <option value="$PROJECT_DIR$/preproc/duolingo_word_feats.py" />
+        <option value="$PROJECT_DIR$/preproc/extract_senna.py" />
       </list>
     </option>
   </component>
@@ -127,7 +132,7 @@
     <detection-done>true</detection-done>
     <sorting>DEFINITION_ORDER</sorting>
   </component>
-  <component name="ProjectFrameBounds" extendedState="6">
+  <component name="ProjectFrameBounds">
     <option name="y" value="23" />
     <option name="width" value="1440" />
     <option name="height" value="823" />
@@ -182,7 +187,7 @@
             <path>
               <item name="BiLSTM-CRF-for-sequence-tagging" type="b2602c69:ProjectViewProjectNode" />
               <item name="BiLSTM-CRF-for-sequence-tagging" type="462c0819:PsiDirectoryNode" />
-              <item name="preproc" type="462c0819:PsiDirectoryNode" />
+              <item name="preproc_for_cluf" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -231,7 +236,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="23" width="1440" height="823" extended-state="6" />
+    <frame x="0" y="23" width="1440" height="823" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -268,7 +273,7 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/preproc/extract_pos.py">
+    <entry file="file://$PROJECT_DIR$/preproc_for_cluf/extract_pos.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
@@ -278,7 +283,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/preproc/duolingo_seq_feats.py">
+    <entry file="file://$PROJECT_DIR$/preproc_for_cluf/duolingo_seq_feats.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="125">
           <caret line="32" column="29" lean-forward="false" selection-start-line="32" selection-start-column="29" selection-end-line="32" selection-end-column="29" />
@@ -296,7 +301,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/preproc/duolingo_word_feats.py">
+    <entry file="file://$PROJECT_DIR$/preproc_for_cluf/duolingo_word_feats.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="598">
           <caret line="67" column="30" lean-forward="false" selection-start-line="67" selection-start-column="25" selection-end-line="67" selection-end-column="30" />
@@ -306,25 +311,15 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/preproc/order_data_by_length.py">
+    <entry file="file://$PROJECT_DIR$/preproc_for_cluf/order_data_by_length.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="975">
-          <caret line="66" column="22" lean-forward="true" selection-start-line="66" selection-start-column="22" selection-end-line="66" selection-end-column="22" />
+          <caret line="66" column="22" lean-forward="false" selection-start-line="66" selection-start-column="22" selection-end-line="66" selection-end-column="22" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/preproc/extract_senna.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#13#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/preproc/load_duolingo_seq_feats.py">
+    <entry file="file://$PROJECT_DIR$/preproc_for_cluf/load_duolingo_seq_feats.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="570">
           <caret line="38" column="19" lean-forward="false" selection-start-line="38" selection-start-column="8" selection-end-line="38" selection-end-column="19" />
@@ -334,10 +329,20 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/preproc/load_duolingo_word_feats.py">
+    <entry file="file://$PROJECT_DIR$/preproc_for_cluf/load_duolingo_word_feats.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="392">
-          <caret line="107" column="0" lean-forward="true" selection-start-line="107" selection-start-column="0" selection-end-line="107" selection-end-column="0" />
+          <caret line="107" column="0" lean-forward="false" selection-start-line="107" selection-start-column="0" selection-end-line="107" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#13#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/preproc_for_cluf/extract_senna.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="315">
+          <caret line="21" column="23" lean-forward="false" selection-start-line="21" selection-start-column="23" selection-end-line="21" selection-end-column="23" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
           </folding>

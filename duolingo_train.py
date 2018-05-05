@@ -382,7 +382,7 @@ def main():
 
             optimizer.step()
 
-            if count != 0 and count % (len(indices)//4) == 0:
+            if count != 0 and count % ((len(indices)-1)//2) == 0:
                 lr_adjust_counter += 1
                 adjust_learning_rate(optimizer, lr_adjust_counter, learning_rate)
 
@@ -390,7 +390,7 @@ def main():
             stud_id, targets, caps, sentence_in, tags
 
             # if count % 1000 == 0 and ((count > 20000 and epoch==0) or (epoch!=0)):
-            if count != 0 and count % (len(indices)//2) == 0:
+            if count != 0 and count % ((len(indices)-1)//2) == 0:
             #if count != 0 and count % 1 == 0:
             # if epoch != 0 and count == 0:
                 print('NLL Loss: {}'.format(float(loss_cal)))

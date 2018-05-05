@@ -48,19 +48,19 @@ def replace_with_nums(data, vocab_list, pos_list, edge_label_list, edge_head_lis
 def load_duolingo_word_feats(label):
     if label == 'train':
         with open('../data/duolingo/es_en_train_allfeats_lowered.pkl', 'rb') as f:
-            all_data = pickle.load(f)
-        print("Train data length: " + str(len(all_data)))
+            data = pickle.load(f)
+        print("Train data length: "+str(len(data)))
         with open('../data/duolingo/es_en_train_labels.pkl', 'rb') as f:
-            all_data_labels = pickle.load(f)
+            data_labels = pickle.load(f)
 
     elif label == 'test' or label == 'dev':
         with open('../data/duolingo/es_en_dev_allfeats_lowered.pkl', 'rb') as f:
-            all_data = pickle.load(f)
-        print("Dev data length: " + str(len(all_data)))
+            data = pickle.load(f)
+        print("Dev data length: "+str(len(data)))
         with open('../data/duolingo/es_en_dev_labels.pkl', 'rb') as f:
-            all_data_labels = pickle.load(f)
+            data_labels = pickle.load(f)
 
-    return all_data, all_data_labels
+    return data, data_labels
 
 
 def process_duolingo_word_feats(train, test):

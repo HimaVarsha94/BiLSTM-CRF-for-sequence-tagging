@@ -4,7 +4,7 @@ from collections import Counter,defaultdict
 
 time_splits = [1,2,3,4,5,10,15,20,25,30,math.inf]
 
-## helper functiona
+## helper functions
 def build_time_vocab(time_feats):
     for i,val in enumerate(time_feats):
         for j,split in enumerate(time_splits):
@@ -97,8 +97,12 @@ if __name__ == '__main__':
     print(len(train_feats['countries']))
     print(len(dev_feats['countries']))
 
+    new_train_feats = [{'user':train_feats['user'][i],'country':train_feats['countries'][i],'days':train_feats['days'][i],'client' :train_feats['client'][i],'session':train_feats['session'][i],'format':train_feats['format'][i],'time':train_feats['time'][i]} for i in range(len(train_feats['countries']))]
+    
+    new_dev_feats = [{'user':dev_feats['user'][i],'country':dev_feats['countries'][i],'days':dev_feats['days'][i],'client' :dev_feats['client'][i],'session':dev_feats['session'][i],'format':dev_feats['format'][i],'time':dev_feats['time'][i]} for i in range(len(dev_feats['countries']))]
+
     with open('../data/duolingo/procd_es_en_train_seq_feats.pkl', 'wb') as f:
-        pickle.dump(train_feats, f)
+        pickle.dump(new_train_feats, f)
 
     with open('../data/duolingo/procd_es_en_dev_seq_feats.pkl', 'wb') as f:
-        pickle.dump(dev_feats, f)
+        pickle.dump(new_dev_feats, f)

@@ -10,13 +10,10 @@ from sklearn.metrics import f1_score, precision_score, recall_score, roc_curve
 from random import shuffle
 from datetime import timedelta
 from feature_extraction_functions import *
-# torch.cuda.set_device(1)
-# torch.manual_seed(1)
+from sys import argv
 
 START_TAG = '<START>'
 END_TAG = '<END>'
-use_gpu = 0
-
 
 def get_embeddings_matrix(data):
     word_to_ix = {'unk':0}
@@ -317,7 +314,7 @@ def main():
     parameters = model.parameters()
     # parameters = filter(lambda p: model.requires_grad, model.parameters())
     # optimizer = optim.Adam(parameters, lr=0.001)
-    learning_rate = 0.1
+    learning_rate = 0.01
     optimizer = optim.SGD(parameters, lr=learning_rate)
 
     len_train = len(training_data)
@@ -377,17 +374,20 @@ def main():
                 else:
                     loss = loss_function(torch.log(tag_scores),
                         autograd.Variable(targets))
-                loss_cal += loss
+                loss_cal += float(loss.cpu().detach().numpy())
                 loss.backward()
 
             optimizer.step()
 
-            if count != 0 and count % (len(indices)//4) == 0:
+            if count != 0 and count % ((len(indices)-1)//2) == 0:
                 lr_adjust_counter += 1
                 adjust_learning_rate(optimizer, lr_adjust_counter, learning_rate)
 
+            del sentence, tag_scores, loss, char_in, char_em, student_ids,
+            stud_id, targets, caps, sentence_in, tags
+
             # if count % 1000 == 0 and ((count > 20000 and epoch==0) or (epoch!=0)):
-            if count != 0 and count % (len(indices)//2) == 0:
+            if count != 0 and count % ((len(indices)-1)//2) == 0:
             #if count != 0 and count % 1 == 0:
             # if epoch != 0 and count == 0:
                 print('NLL Loss: {}'.format(float(loss_cal)))
@@ -402,13 +402,27 @@ def main():
                     get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, test_X, test_y, test_feats, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
                 print('Elapsed time in epoch: {}'.format(str(timedelta(seconds=int(time.time()-last_time)))))
 
-            del sentence, tag_scores, loss, char_in, char_em, student_ids,
-            stud_id, targets, caps, sentence_in, tags
-
         print('Epoch {} took {}'.format(epoch, str(timedelta(seconds=int(time.time()-last_time)))))
         #get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, training_data, y, training_feats, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
         get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, test_X, test_y, test_feats, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
         last_time = time.time()
 
 if __name__ == '__main__':
+    opts = {}
+    while argv:
+        if argv[0][0] == '-':
+            opts[argv[0]] = argv[1]
+        argv = argv[1:]
+
+    try:
+        use_gpu = int(opts['--gpu'])
+        if use_gpu and '--device' in opts:
+            torch.cuda.set_device(int(opts['--device']))
+
+    except(KeyError):
+        print('Usage:')
+        print('python duolingo_train.py --gpu 0            # for cpu')
+        print('python duolingo_train.py --gpu 1 --device 2 # for gpu, --device can be omitted')
+        exit()
+
     main()

@@ -363,7 +363,7 @@ def main():
     if not bilstm_crf_cnn_flag:
         loss_function = nn.NLLLoss()
     parameters = model.parameters()
-    learning_rate = 0.1
+    #learning_rate = 0.05
     optimizer = optim.SGD(parameters, lr=learning_rate)
 
     len_train = len(train_data)
@@ -377,7 +377,7 @@ def main():
     lr_adjust_counter = -1
     for epoch in range(500):
         indices =[i for i in range(len_train)]
-        shuffle(indices)
+        #shuffle(indices)
         loss_cal = 0.0
         count = -1
         for ind in indices:
@@ -386,7 +386,6 @@ def main():
 
             tags = train_labels[ind]
             model.zero_grad()
-            # THIS NOW HAPPENS IN FORWARD
             sentence_in = prepare_sequence(sentence, word_to_ix)
             caps = autograd.Variable(torch.LongTensor([cap_feature(w) for w in sentence]))
             targets = torch.LongTensor([tag_to_ix[t] for t in tags])
@@ -465,7 +464,7 @@ def main():
 
         print('Epoch {} took {}'.format(epoch, str(timedelta(seconds=int(time.time()-last_time)))))
         #get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, train_data, train_labels, training_feats, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
-        get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, test_data_feats, test_seq_feats, test_labels, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
+        #get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, test_data_feats, test_seq_feats, test_labels, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
         last_time = time.time()
 
 if __name__ == '__main__':
@@ -479,6 +478,8 @@ if __name__ == '__main__':
         use_gpu = int(opts['--gpu'])
         if use_gpu and '--device' in opts:
             torch.cuda.set_device(int(opts['--device']))
+
+        learning_rate = float(opts['--lr'])
 
     except(KeyError):
         print('Usage:')

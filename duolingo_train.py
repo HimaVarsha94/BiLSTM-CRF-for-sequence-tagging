@@ -10,13 +10,10 @@ from sklearn.metrics import f1_score, precision_score, recall_score, roc_curve
 from random import shuffle
 from datetime import timedelta
 from feature_extraction_functions import *
-# torch.cuda.set_device(1)
-# torch.manual_seed(1)
+from sys import argv
 
 START_TAG = '<START>'
 END_TAG = '<END>'
-use_gpu = 0
-
 
 def get_embeddings_matrix(data):
     word_to_ix = {'unk':0}
@@ -411,4 +408,21 @@ def main():
         last_time = time.time()
 
 if __name__ == '__main__':
+    opts = {}
+    while argv:
+        if argv[0][0] == '-':
+            opts[argv[0]] = argv[1]
+        argv = argv[1:]
+
+    try:
+        use_gpu = int(opts['--gpu'])
+        if use_gpu and '--device' in opts:
+            torch.cuda.set_device(int(opts['--device']))
+
+    except(KeyError):
+        print('Usage:')
+        print('python duolingo_train.py --gpu 0            # for cpu')
+        print('python duolingo_train.py --gpu 1 --device 2 # for gpu, --device can be omitted')
+        exit()
+
     main()

@@ -377,7 +377,7 @@ def main():
                 else:
                     loss = loss_function(torch.log(tag_scores),
                         autograd.Variable(targets))
-                loss_cal += loss
+                loss_cal += float(loss.cpu().detach().numpy())
                 loss.backward()
 
             optimizer.step()
@@ -385,6 +385,9 @@ def main():
             if count != 0 and count % (len(indices)//4) == 0:
                 lr_adjust_counter += 1
                 adjust_learning_rate(optimizer, lr_adjust_counter, learning_rate)
+
+            del sentence, tag_scores, loss, char_in, char_em, student_ids,
+            stud_id, targets, caps, sentence_in, tags
 
             # if count % 1000 == 0 and ((count > 20000 and epoch==0) or (epoch!=0)):
             if count != 0 and count % (len(indices)//2) == 0:
@@ -401,9 +404,6 @@ def main():
                     # get_results('pos_glove_text/dev_ner_bilstm_cnn', model, dev_X, dev_y, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
                     get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, test_X, test_y, test_feats, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
                 print('Elapsed time in epoch: {}'.format(str(timedelta(seconds=int(time.time()-last_time)))))
-
-            del sentence, tag_scores, loss, char_in, char_em, student_ids,
-            stud_id, targets, caps, sentence_in, tags
 
         print('Epoch {} took {}'.format(epoch, str(timedelta(seconds=int(time.time()-last_time)))))
         #get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, training_data, y, training_feats, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)

@@ -55,18 +55,18 @@ def process_duolingo_seq_feats(train_feats, test_feats):
 
                 print('{} vocab size: {}'.format(key,len(unique_vals)+2))
 
-                with open('../data/duolingo/vocabs_es_en/'+key+'_vocab.pkl', 'wb') as f:
-                    unique_vals.append(len(unique_vals) + 1)
-                    pickle.dump(unique_vals, f)
+                # with open('../data/duolingo/vocabs_es_en/'+key+'_vocab.pkl', 'wb') as f:
+                #     unique_vals.append(len(unique_vals) + 1)
+                #     pickle.dump(unique_vals, f)
 
             elif key == 'time':
                 train_feats[key] = build_time_vocab(train_feats[key])
                 test_feats[key] = build_time_vocab(test_feats[key])
                 print('{} vocab size: {}'.format(key,len(list(set(train_feats[key])))+2))
 
-                vocab = [1,2,3,4,5,6,7,8,9,10,11,12]
-                with open('../data/duolingo/vocabs_es_en/'+key+'_vocab.pkl', 'wb') as f:
-                    pickle.dump(vocab, f)
+                # vocab = [1,2,3,4,5,6,7,8,9,10,11,12]
+                # with open('../data/duolingo/vocabs_es_en/'+key+'_vocab.pkl', 'wb') as f:
+                #     pickle.dump(vocab, f)
 
             continue
 
@@ -81,9 +81,9 @@ def process_duolingo_seq_feats(train_feats, test_feats):
             else:
                 test_feats[key][i] = len(unique_vals) + 1
 
-        with open('../data/duolingo/vocabs_es_en/'+key+'_vocab.pkl', 'wb') as f:
-            unique_vals.append(len(unique_vals) + 1)
-            pickle.dump(unique_vals, f)
+        # with open('../data/duolingo/vocabs_es_en/'+key+'_vocab.pkl', 'wb') as f:
+        #     unique_vals.append(len(unique_vals) + 1)
+        #     pickle.dump(unique_vals, f)
 
     return train_feats, test_feats
 

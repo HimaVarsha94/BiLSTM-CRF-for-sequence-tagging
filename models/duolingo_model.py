@@ -12,6 +12,7 @@ class BILSTM_CNN(nn.Module):
     def __init__(self, embedding_dim, hidden_dim, vocab_size, tagset_size, char_size, pretrained_weight_embeddings, tag_to_ix, vocab_sizes,
                 USE_CRF=False, BIDIRECTIONAL=False, USE_BIGRAM=False, bigram_size=0, CNN=False, use_gpu=0, duolingo_student=True):
         super(BILSTM_CNN, self).__init__()
+        self.USE_CRF = USE_CRF
         self.char_dim = 25
         self.char_lstm_dim = 25
         self.CNN = CNN
@@ -111,6 +112,8 @@ class BILSTM_CNN(nn.Module):
             print("Bidirectional")
             if not duolingo_student:
                 self.lstm = nn.LSTM(embedding_dim + self.char_lstm_dim + self.cap_embedding_dim, hidden_dim, bidirectional=BIDIRECTIONAL)
+            elif not CNN:
+                self.lstm = nn.LSTM(embedding_dim + self.cap_embedding_dim + seq_feat_dims + token_feat_dims, hidden_dim, bidirectional=BIDIRECTIONAL)
             else:
                 self.lstm = nn.LSTM(embedding_dim + self.char_lstm_dim + self.cap_embedding_dim + seq_feat_dims + token_feat_dims, hidden_dim, bidirectional=BIDIRECTIONAL)
         else:
@@ -125,9 +128,11 @@ class BILSTM_CNN(nn.Module):
         # else:
         #     self.hidden2tag = nn.Linear(hidden_dim, tagset_size)
 
-        # self.crf = CRF(tagset_size, tag_to_ix, self.use_gpu)
-        # if self.use_gpu:
-        #     self.crf = self.crf.cuda()
+        if self.USE_CRF:
+            self.crf = CRF(tagset_size, tag_to_ix, self.use_gpu)
+            if self.use_gpu:
+                self.crf = self.crf.cuda()
+
         if self.bidirectional:
             self.hidden2tag = nn.Linear(2*hidden_dim, tagset_size)
             b = np.sqrt(6.0 / (self.hidden2tag.weight.size(0) + self.hidden2tag.weight.size(1)))
@@ -188,6 +193,17 @@ class BILSTM_CNN(nn.Module):
                     embeds = torch.cat((embeds, chars_embeds, cap_embedding), 1).cuda()
                 else:
                     embeds = torch.cat((embeds, chars_embeds, cap_embedding), 1)
+        else:
+            if self.duolingo_student:
+                if self.use_gpu:
+                    embeds = torch.cat((embeds, cap_embedding, student_embedding, country_embedding, days_embedding, client_embedding, session_embedding, format_embedding, time_embedding, pos_embedding, edge_labels_embedding, edge_heads_embedding), 1).cuda()
+                else:
+                    embeds = torch.cat((embeds, cap_embedding, student_embedding, country_embedding, days_embedding, client_embedding, session_embedding, format_embedding, time_embedding, pos_embedding, edge_labels_embedding, edge_heads_embedding), 1)
+            else:
+                if self.use_gpu:
+                    embeds = torch.cat((embeds, cap_embedding), 1).cuda()
+                else:
+                    embeds = torch.cat((embeds, cap_embedding), 1)
         # print(embeds.view(len(sentence), 1, -1).shape)
         #lstm_out, self.hidden = self.lstm(embeds.unsqueeze(1), self.hidden)
         lstm_out, _ = self.lstm(d(embeds).unsqueeze(1))
@@ -197,25 +213,24 @@ class BILSTM_CNN(nn.Module):
         # print("original shape before MLP "+str(lstm_out.view(len(sentence), -1).shape))
         # print("shape of onehot bigram "+str(bigram_one_hot))
         if self.append_bigram:
-            # print("concatednated vector"+str(lstm_out.view(len(sentence), -1)))
+            # print("concatenated vector"+str(lstm_out.view(len(sentence), -1)))
             tag_space=self.hidden2tag(torch.cat([lstm_out.view(len(sentence), -1),bigram_one_hot],dim=1))
         else:
             tag_space = self.hidden2tag(lstm_out.view(len(sentence), -1))
 
         tag_scores = F.softmax(tag_space, dim=1)
-        # import pdb; pdb.set_trace()
         return tag_scores
 
 
     def neg_ll_loss(self, sentence, gold_labels, chars, caps, feats, drop_prob):
-        lstm_feats = self.forward_lstm(sentence, chars, caps, sid_emb, drop_prob)
+        lstm_feats = self.forward_lstm(sentence, chars, caps, feats, drop_prob)
         return self.crf.neg_ll_loss(sentence, gold_labels, lstm_feats)
 
     def forward(self, sentence, chars, caps, feats, drop_prob):
-        # feats = self.forward_lstm(sentence, chars, caps, sid_emb, drop_prob)
-        # score, tag_seq = self.crf.forward(sentence, feats)
-
-        scores = self.forward_lstm(sentence, chars, caps, feats, drop_prob)
-
-        # return score, tag_seq
-        return scores
+        if self.USE_CRF:
+            feats = self.forward_lstm(sentence, chars, caps, feats, drop_prob)
+            score, tag_seq = self.crf.forward(sentence, feats)
+            return score, tag_seq
+        else:
+            scores = self.forward_lstm(sentence, chars, caps, feats, drop_prob)
+            return scores

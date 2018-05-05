@@ -4,25 +4,25 @@ START_TAG = '<START>'
 END_TAG = '<END>'
 
 def extract_student_id():
-	student_idx = {}
-	with open('./data/duolingo/train_seq_feats.pkl', 'rb') as f:
-		ids = pickle.load(f)
+    student_idx = {}
+    with open('./data/duolingo/train_seq_feats.pkl', 'rb') as f:
+        ids = pickle.load(f)
 
-	student_ids = ids['user']
-	for s_id in student_ids:
-		if s_id not in student_idx:
-			student_idx[s_id] = len(student_idx)
-	return student_idx
+    student_ids = ids['user']
+    for s_id in student_ids:
+        if s_id not in student_idx:
+            student_idx[s_id] = len(student_idx)
+    return student_idx
 
 def load_features():
-	with open('./data/duolingo/train_seq_feats.pkl', 'rb') as f:
-		ids = pickle.load(f)
-	train_sids = ids['user']
+    with open('./data/duolingo/train_seq_feats.pkl', 'rb') as f:
+        ids = pickle.load(f)
+    train_sids = ids['user']
 
-	with open('./data/duolingo/dev_seq_feats.pkl', 'rb') as f:
-		ids = pickle.load(f)
-	test_sids = ids['user']
-	return train_sids, test_sids
+    with open('./data/duolingo/dev_seq_feats.pkl', 'rb') as f:
+        ids = pickle.load(f)
+    test_sids = ids['user']
+    return train_sids, test_sids
 
 def cap_feature(s):
     if s.lower() == s:
@@ -34,11 +34,13 @@ def cap_feature(s):
     else:
         return 3
 
-def tag_indices(X, y):
-    # tag_to_idx = {START_TAG: 0, END_TAG: 1}
-    # idx_to_tag = {0: START_TAG, 1: END_TAG}
-    tag_to_idx = {}
-    idx_to_tag = {}
+def tag_indices(X, y, crf):
+    if crf:
+        tag_to_idx = {START_TAG: 0, END_TAG: 1}
+        idx_to_tag = {0: START_TAG, 1: END_TAG}
+    else:
+        tag_to_idx = {}
+        idx_to_tag = {}
     for sent_tag in y:
         for tag in sent_tag:
             if tag not in tag_to_idx:

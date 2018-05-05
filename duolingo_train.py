@@ -141,25 +141,36 @@ def get_results(filename, model, test_data_feats, test_seq_feats, test_labels, e
                 caps = autograd.Variable(torch.LongTensor([cap_feature(w) for w in sentence])).cuda()
             else:
                 caps = autograd.Variable(torch.LongTensor([cap_feature(w) for w in sentence]))
+
             if CNN:
                 char_in = prepare_words(sentence, char_to_ix)
                 char_em = char_emb(char_in)
                 if USE_CRF:
                     prob, tag_seq = model(sentence_in, char_em, caps, feats, 0)
                     predicted = torch.LongTensor(tag_seq)
+                    tag_scores = prob
                 else:
                     tag_scores = model(sentence_in, char_em, caps, feats, 0)
                     prob, predicted = torch.max(tag_scores.data, 1)
-
             else:
-                tag_scores = model(sentence_in)
+                char_in = prepare_words(sentence, char_to_ix)
+                char_em = char_emb(char_in)
+                tag_scores = model(sentence_in, char_em, caps, feats, 0)
                 prob, predicted = torch.max(tag_scores.data, 1)
+
             if use_gpu:
-                all_predicted += tag_scores.data.cpu().numpy()[:,1].tolist()
+                if USE_CRF:
+                    all_predicted += tag_scores.data.cpu().numpy().tolist()
+                else:
+                    all_predicted += tag_scores.data.cpu().numpy()[:,1].tolist()
                 all_targets += targets.data.cpu().numpy().tolist()
             else:
-                all_predicted += tag_scores.data.numpy()[:,1].tolist()
+                if USE_CRF:
+                    all_predicted += tag_scores.data.numpy().tolist()
+                else:
+                    all_predicted += tag_scores.data.numpy()[:,1].tolist()
                 all_targets += targets.data.cpu().numpy().tolist()
+
             if use_gpu:
                 correct += (predicted.cuda() == targets.data).sum()
             else:
@@ -171,6 +182,10 @@ def get_results(filename, model, test_data_feats, test_seq_feats, test_labels, e
             #f.write("\n")
             del sentence, tags, sentence_in, feats, caps,
             char_in, char_em, prob, predicted
+            try:
+                del tag_scores
+            except:
+                pass
 
     ## Translate sequences into binary labels (0 correct 1 wrong)
     # gold_labels = torch.cat(all_targets).data - 2
@@ -310,7 +325,7 @@ def adjust_learning_rate(optimizer, epoch, LR):
 def main():
     USE_CRF = False
     HIDDEN_DIM = 200
-    CNN = True
+    CNN = False
     SENNA = False
     BIDIRECTIONAL = True
     bilstm_crf_cnn_flag = False
@@ -325,7 +340,7 @@ def main():
     test_data = [test_data_feats[i]['words'] for i in range(len(test_data_feats))]
 
     char_to_ix = char_dict(train_data)
-    tag_to_ix, idx_to_tag = tag_indices(train_data, train_labels)
+    tag_to_ix, idx_to_tag = tag_indices(train_data, train_labels, USE_CRF)
 
     vocab_sizes = {'user': 2645,
                    'country': 201,
@@ -348,14 +363,15 @@ def main():
 
     if CNN == False and USE_CRF == False:
         print("Bilstm")
-        model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix))#, emb_mat, USE_CRF, BIDIRECTIONAL=True)
+        # model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix))#, emb_mat, USE_CRF, BIDIRECTIONAL=True)
+        model = BILSTM_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, tag_to_ix, vocab_sizes, USE_CRF=USE_CRF, CNN=CNN, BIDIRECTIONAL=True, use_gpu=use_gpu, duolingo_student=True)
     if CNN == True and USE_CRF == False:
         print('Using BiLSTM-CNN')
-        model = BILSTM_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, tag_to_ix, vocab_sizes, CNN=True, BIDIRECTIONAL=True, use_gpu=use_gpu, duolingo_student=True)
+        model = BILSTM_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, tag_to_ix, vocab_sizes, USE_CRF=USE_CRF, CNN=CNN, BIDIRECTIONAL=True, use_gpu=use_gpu, duolingo_student=True)
     if CNN == True and USE_CRF == True:
         print("Using BiLSTM-CNN-CRF")
         bilstm_crf_cnn_flag = True
-        model = BILSTM_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, tag_to_ix, vocab_sizes, CNN=True, BIDIRECTIONAL=True, use_gpu=use_gpu, duolingo_student=True)
+        model = BILSTM_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, tag_to_ix, vocab_sizes, USE_CRF=USE_CRF, CNN=CNN, BIDIRECTIONAL=True, use_gpu=use_gpu, duolingo_student=True)
 
     if use_gpu:
         model = model.cuda()
@@ -413,7 +429,8 @@ def main():
                     nll = model.neg_ll_loss(sentence_in.cuda(), targets, char_em.cuda(), caps.cuda(), feats, 0.5)
                 else:
                     nll = model.neg_ll_loss(sentence_in, targets, char_em, caps, feats, 0.5)
-                loss_cal += nll
+
+                loss_cal += float(nll.cpu().detach().numpy())
                 nll.backward()
                 torch.nn.utils.clip_grad_norm(model.parameters(), 5.0)
             elif CNN:
@@ -425,7 +442,13 @@ def main():
                 else:
                     tag_scores = model(sentence_in, char_em, caps, feats, 0.5)
             else:
-                tag_scores = model(sentence_in)
+                char_in = prepare_words(sentence, char_to_ix)
+                char_em = char_emb(char_in)
+                if use_gpu:
+                    tag_scores = model(sentence_in.cuda(), char_em.cuda(),
+                            caps.cuda(), feats, 0.5)
+                else:
+                    tag_scores = model(sentence_in, char_em, caps, feats, 0.5)
 
             if not bilstm_crf_cnn_flag:
                 if use_gpu:
@@ -443,12 +466,21 @@ def main():
                 lr_adjust_counter += 1
                 adjust_learning_rate(optimizer, lr_adjust_counter, learning_rate)
 
-            del sentence, tag_scores, loss, char_in, char_em,
-            targets, caps, sentence_in, tags, feats
+            del sentence, char_in, char_em, targets, caps, sentence_in, tags, feats
+
+            try:
+                del tag_scores, loss
+            except:
+                pass
+
+            try:
+                del nll
+            except:
+                pass
 
             # if count % 1000 == 0 and ((count > 20000 and epoch==0) or (epoch!=0)):
-            if count != 0 and count % ((len(indices)-1)//2) == 0:
-            # if count != 0 and count % 1 == 0:
+            # if count != 0 and count % ((len(indices)-1)//2) == 0:
+            if count != 0 and count % 1 == 0:
             # if epoch != 0 and count == 0:
                 print('NLL Loss: {}'.format(float(loss_cal)))
                 loss_cal = 0.

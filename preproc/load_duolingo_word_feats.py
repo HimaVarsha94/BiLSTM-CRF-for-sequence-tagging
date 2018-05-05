@@ -6,12 +6,12 @@ from collections import Counter, defaultdict
 def replace_with_nums(data, vocab_list, pos_list, edge_label_list, edge_head_list, char_list):
     # max_word = 0
     for feats in data:
-        for i, w in enumerate(feats['words']):
-            if w in vocab_list:
-                ## no zeros allowed
-                feats['words'][i] = vocab_list.index(w) + 1
-            else:
-                feats['words'][i] = len(vocab_list) + 1
+        # for i, w in enumerate(feats['words']):
+        #     if w in vocab_list:
+        #         ## no zeros allowed
+        #         feats['words'][i] = vocab_list.index(w) + 1
+        #     else:
+        #         feats['words'][i] = len(vocab_list) + 1
             # if feats['words'][i] > max_word:
             #     max_word = feats['words'][i]
 

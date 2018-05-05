@@ -11,6 +11,7 @@ from random import shuffle
 from datetime import timedelta
 from feature_extraction_functions import *
 from sys import argv
+import pdb
 
 START_TAG = '<START>'
 END_TAG = '<END>'
@@ -53,7 +54,7 @@ def get_glove_matrix(data):
 
     with open('./models/duolingo_models/word_to_ix.pkl', 'wb') as f:
         pickle.dump(word_to_ix, f)
-    #this contains a list of all senna obj embeddings
+    #this contains a list of all glove obj embeddings
     with open('./embeddings/glove_obj.pkl', 'rb') as f:
         glove_obj = pickle.load(f)
     #embeddings matrix with each row corresponding to a word to pass to nn.embedding layer
@@ -103,38 +104,51 @@ def char_emb(chars2):
         chars2_mask = autograd.Variable(torch.LongTensor(chars2_mask))
     return chars2_mask
 
-def get_results(filename, model, data_X, data_Y, test_feats, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu):
+def get_results(filename, model, test_data_feats, test_seq_feats, test_labels, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu):
     correct = 0
     total = 0
     all_predicted = []
     all_targets= []
 
-    len_test = len(data_X)
+# test_data_feats, test_labels, test_feats
+    len_test = len(test_data_feats)
     print("Testing length", len_test)
     fname = filename + str(epoch) + '.txt'
     with open(fname,'w') as f:
         for ind in range(len_test):
-            sentence = data_X[ind]
-            tags = data_Y[ind]
+            sentence = test_data_feats[ind]['words']
+            tags = test_labels[ind]
 
             sentence_in = prepare_sequence(sentence, word_to_ix)
             targets = prepare_sequence(tags, tag_to_ix, tag=True)
-            stud_id = test_feats[ind]
-            student_ids = autograd.Variable(torch.LongTensor([sid_idx[stud_id]]*len(sentence)))
+
+            feats = {}
+            ## seq feats
+            for key in test_seq_feats[ind].keys():
+                if use_gpu:
+                    feats[key] = autograd.Variable(torch.LongTensor([test_seq_feats[ind][key]]*len(sentence))).cuda()
+                else:
+                    feats[key] = autograd.Variable(torch.LongTensor([test_seq_feats[ind][key]]*len(sentence)))
+
+            ## token feats
+            for key in ['pos','edge_labels','edge_heads']:
+                if use_gpu:
+                    feats[key] = autograd.Variable(torch.LongTensor(test_data_feats[ind][key])).cuda()
+                else:
+                    feats[key] = autograd.Variable(torch.LongTensor(test_data_feats[ind][key]))
 
             if use_gpu:
                 caps = autograd.Variable(torch.LongTensor([cap_feature(w) for w in sentence])).cuda()
-                student_ids = student_ids.cuda()
             else:
                 caps = autograd.Variable(torch.LongTensor([cap_feature(w) for w in sentence]))
             if CNN:
                 char_in = prepare_words(sentence, char_to_ix)
                 char_em = char_emb(char_in)
                 if USE_CRF:
-                    prob, tag_seq = model(sentence_in, char_em, caps, student_ids, 0)
+                    prob, tag_seq = model(sentence_in, char_em, caps, feats, 0)
                     predicted = torch.LongTensor(tag_seq)
                 else:
-                    tag_scores = model(sentence_in, char_em, caps, student_ids, 0)
+                    tag_scores = model(sentence_in, char_em, caps, feats, 0)
                     prob, predicted = torch.max(tag_scores.data, 1)
 
             else:
@@ -142,10 +156,10 @@ def get_results(filename, model, data_X, data_Y, test_feats, epoch, idx_to_tag, 
                 prob, predicted = torch.max(tag_scores.data, 1)
             if use_gpu:
                 all_predicted += tag_scores.data.cpu().numpy()[:,1].tolist()
-                all_targets += (targets.data.cpu().numpy().tolist())
+                all_targets += targets.data.cpu().numpy().tolist()
             else:
-                all_predicted.append(tag_scores.data.numpy()[:,1].tolist())
-                all_targets.append(targets)
+                all_predicted += tag_scores.data.numpy()[:,1].tolist()
+                all_targets += targets.data.cpu().numpy().tolist()
             if use_gpu:
                 correct += (predicted.cuda() == targets.data).sum()
             else:
@@ -155,7 +169,7 @@ def get_results(filename, model, data_X, data_Y, test_feats, epoch, idx_to_tag, 
             #for tag_ in range(len(sentence)):
             #    f.write(sentence[tag_] + " " + str(tags[tag_])+" "+str(idx_to_tag[predicted[tag_]])+"\n")
             #f.write("\n")
-            del sentence, tags, sentence_in, stud_id, student_ids, caps,
+            del sentence, tags, sentence_in, feats, caps,
             char_in, char_em, prob, predicted
 
     ## Translate sequences into binary labels (0 correct 1 wrong)
@@ -243,26 +257,49 @@ def compute_auroc(actual, predicted):
     return auroc
 
 
-def load_duolingo(train=False, test=False):
+def load_duolingo(label):
+    if label == 'train':
+        with open('./data/duolingo/procd_es_en_train_allfeats_lowered.pkl', 'rb') as f:
+            train_data = pickle.load(f)
 
-    if train == True:
-        with open('./data/duolingo/train_data.pkl', 'rb') as f:
-            all_data = pickle.load(f)
-        print("Train data length: "+str(len(all_data)))
-        with open('./data/duolingo/train_data_labels.pkl', 'rb') as f:
-            all_data_labels = pickle.load(f)
-        return all_data, all_data_labels
+        with open('./data/duolingo/procd_es_en_train_labels.pkl', 'rb') as f:
+            train_labels = pickle.load(f)
 
-    if test == True:
-        with open('./data/duolingo/dev_data.pkl', 'rb') as f:
-            all_data = pickle.load(f)
-        print("Test data length: "+str(len(all_data)))
-        with open('./data/duolingo/dev_data_labels.pkl', 'rb') as f:
-            all_data_labels = pickle.load(f)
-        return all_data, all_data_labels
+        with open('./data/duolingo/procd_es_en_train_seq_feats.pkl', 'rb') as f:
+            train_feats = pickle.load(f)
 
-    import pdb; pdb.set_trace()
+        return train_data, train_feats, train_labels
 
+    elif label == 'test' or label == 'dev':
+        with open('./data/duolingo/procd_es_en_dev_allfeats_lowered.pkl', 'rb') as f:
+            test_data = pickle.load(f)
+
+        with open('./data/duolingo/procd_es_en_dev_labels.pkl', 'rb') as f:
+            test_labels = pickle.load(f)
+
+        with open('./data/duolingo/procd_es_en_dev_seq_feats.pkl', 'rb') as f:
+            test_feats = pickle.load(f)
+
+        return test_data, test_feats, test_labels
+
+    elif label == 'vocabs':
+        with open('./data/duolingo/vocabs_es_en/client_vocab.pkl', 'rb') as f:
+            client_vocab = pickle.load(f)
+        with open('./data/duolingo/vocabs_es_en/countries_vocab.pkl', 'rb') as f:
+            countries_vocab = pickle.load(f)
+        with open('./data/duolingo/vocabs_es_en/days_vocab.pkl', 'rb') as f:
+            days_vocab = pickle.load(f)
+        with open('./data/duolingo/vocabs_es_en/format_vocab.pkl', 'rb') as f:
+            format_vocab = pickle.load(f)
+        with open('./data/duolingo/vocabs_es_en/session_vocab.pkl', 'rb') as f:
+            session_vocab = pickle.load(f)
+        with open('./data/duolingo/vocabs_es_en/time_vocab.pkl', 'rb') as f:
+            time_vocab = pickle.load(f)
+        with open('./data/duolingo/vocabs_es_en/user_vocab.pkl', 'rb') as f:
+            user_vocab = pickle.load(f)
+
+        return {'client':client_vocab, 'countries':countries_vocab, 'days':days_vocab,
+                'format':format_vocab, 'session':session_vocab, 'time':time_vocab, 'user':user_vocab}
 
 def adjust_learning_rate(optimizer, epoch, LR):
     lr = LR / (1 + 0.5*epoch)
@@ -271,7 +308,6 @@ def adjust_learning_rate(optimizer, epoch, LR):
         param_group['lr'] = lr
 
 def main():
-
     USE_CRF = False
     HIDDEN_DIM = 200
     CNN = True
@@ -279,32 +315,47 @@ def main():
     BIDIRECTIONAL = True
     bilstm_crf_cnn_flag = False
 
-    training_data, y = load_duolingo(train=True)
-    test_X, test_y = load_duolingo(test=True)
+    train_data_feats, train_seq_feats, train_labels = load_duolingo('train')
+    test_data_feats, test_seq_feats, test_labels = load_duolingo('dev')
+
     sid_idx = extract_student_id()
     training_feats, test_feats = load_features()
 
-    char_to_ix = char_dict(training_data)
-    tag_to_ix, idx_to_tag = tag_indices(training_data, y)
+    train_data = [train_data_feats[i]['words'] for i in range(len(train_data_feats))]
+    test_data = [test_data_feats[i]['words'] for i in range(len(test_data_feats))]
+
+    char_to_ix = char_dict(train_data)
+    tag_to_ix, idx_to_tag = tag_indices(train_data, train_labels)
+
+    vocab_sizes = {'user': 2645,
+                   'country': 201,
+                   'days': 30,
+                   'client': 4,
+                   'session': 4,
+                   'format': 4,
+                   'time': 14,
+                   'pos': 17,
+                   'edge_labels': 33,
+                   'edge_heads': 16}
 
     if SENNA:
         EMBEDDING_DIM = 50
-        emb_mat, word_to_ix = get_embeddings_matrix(training_data)
+        emb_mat, word_to_ix = get_embeddings_matrix(train_data)
     else:
         print("Glove")
         EMBEDDING_DIM = 100
-        emb_mat, word_to_ix = get_glove_matrix(training_data)
+        emb_mat, word_to_ix = get_glove_matrix(train_data)
 
     if CNN == False and USE_CRF == False:
         print("Bilstm")
         model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix))#, emb_mat, USE_CRF, BIDIRECTIONAL=True)
     if CNN == True and USE_CRF == False:
         print('Using BiLSTM-CNN')
-        model = BILSTM_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, tag_to_ix, CNN=True, BIDIRECTIONAL=True, use_gpu=use_gpu, duolingo_student=True)
+        model = BILSTM_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, tag_to_ix, vocab_sizes, CNN=True, BIDIRECTIONAL=True, use_gpu=use_gpu, duolingo_student=True)
     if CNN == True and USE_CRF == True:
         print("Using BiLSTM-CNN-CRF")
         bilstm_crf_cnn_flag = True
-        model = BILSTM_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, tag_to_ix, CNN=True, BIDIRECTIONAL=True, use_gpu=use_gpu, duolingo_student=True)
+        model = BILSTM_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, tag_to_ix, vocab_sizes, CNN=True, BIDIRECTIONAL=True, use_gpu=use_gpu, duolingo_student=True)
 
     if use_gpu:
         model = model.cuda()
@@ -312,13 +363,11 @@ def main():
     if not bilstm_crf_cnn_flag:
         loss_function = nn.NLLLoss()
     parameters = model.parameters()
-    # parameters = filter(lambda p: model.requires_grad, model.parameters())
-    # optimizer = optim.Adam(parameters, lr=0.001)
     learning_rate = 0.1
     optimizer = optim.SGD(parameters, lr=learning_rate)
 
-    len_train = len(training_data)
-    len_test = len(test_X)
+    len_train = len(train_data)
+    len_test = len(test_data)
     print("Number of train sentences ", len_train)
     print("Number of test sentences ", len_test)
     print('Training...')
@@ -333,26 +382,38 @@ def main():
         count = -1
         for ind in indices:
             count += 1
-            sentence = training_data[ind]
-            #print(count,ind)
+            sentence = train_data[ind]
 
-            tags = y[ind]
+            tags = train_labels[ind]
             model.zero_grad()
             # THIS NOW HAPPENS IN FORWARD
             sentence_in = prepare_sequence(sentence, word_to_ix)
             caps = autograd.Variable(torch.LongTensor([cap_feature(w) for w in sentence]))
             targets = torch.LongTensor([tag_to_ix[t] for t in tags])
-            stud_id = training_feats[ind]
-            student_ids = autograd.Variable(torch.LongTensor([sid_idx[stud_id]]*len(sentence)))
+
+            feats = {}
+            ## seq feats
+            for key in train_seq_feats[ind].keys():
+                if use_gpu:
+                    feats[key] = autograd.Variable(torch.LongTensor([train_seq_feats[ind][key]]*len(sentence))).cuda()
+                else:
+                    feats[key] = autograd.Variable(torch.LongTensor([train_seq_feats[ind][key]]*len(sentence)))
+
+            ## token feats
+            for key in ['pos','edge_labels','edge_heads']:
+                if use_gpu:
+                    feats[key] = autograd.Variable(torch.LongTensor(train_data_feats[ind][key])).cuda()
+                else:
+                    feats[key] = autograd.Variable(torch.LongTensor(train_data_feats[ind][key]))
 
             if bilstm_crf_cnn_flag:
                 char_in = prepare_words(sentence, char_to_ix)
                 # char_in = data['chars']
                 char_em = char_emb(char_in)
                 if use_gpu:
-                    nll = model.neg_ll_loss(sentence_in.cuda(), targets, char_em.cuda(), caps.cuda(), student_ids.cuda(), 0.5)
+                    nll = model.neg_ll_loss(sentence_in.cuda(), targets, char_em.cuda(), caps.cuda(), feats, 0.5)
                 else:
-                    nll = model.neg_ll_loss(sentence_in, targets, char_em, caps, student_ids, 0.5)
+                    nll = model.neg_ll_loss(sentence_in, targets, char_em, caps, feats, 0.5)
                 loss_cal += nll
                 nll.backward()
                 torch.nn.utils.clip_grad_norm(model.parameters(), 5.0)
@@ -361,9 +422,9 @@ def main():
                 char_em = char_emb(char_in)
                 if use_gpu:
                     tag_scores = model(sentence_in.cuda(), char_em.cuda(),
-                            caps.cuda(), student_ids.cuda(), 0.5)
+                            caps.cuda(), feats, 0.5)
                 else:
-                    tag_scores = model(sentence_in, char_em, caps, student_ids, 0.5)
+                    tag_scores = model(sentence_in, char_em, caps, feats, 0.5)
             else:
                 tag_scores = model(sentence_in)
 
@@ -379,32 +440,32 @@ def main():
 
             optimizer.step()
 
-            if count != 0 and count % ((len(indices)-1)//2) == 0:
+            if epoch > 5 and count == 0:
                 lr_adjust_counter += 1
                 adjust_learning_rate(optimizer, lr_adjust_counter, learning_rate)
 
-            del sentence, tag_scores, loss, char_in, char_em, student_ids,
-            stud_id, targets, caps, sentence_in, tags
+            del sentence, tag_scores, loss, char_in, char_em,
+            targets, caps, sentence_in, tags, feats
 
             # if count % 1000 == 0 and ((count > 20000 and epoch==0) or (epoch!=0)):
             if count != 0 and count % ((len(indices)-1)//2) == 0:
-            #if count != 0 and count % 1 == 0:
+            # if count != 0 and count % 1 == 0:
             # if epoch != 0 and count == 0:
                 print('NLL Loss: {}'.format(float(loss_cal)))
                 loss_cal = 0.
                 print('Epoch: {}, Sample: {}'.format(epoch, count))
                 if SENNA:
-                    # get_results('text/train_ner_bilstm_cnn', model, training_data, y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
-                    get_results('duolingo_text/test_duolingo_bilstm_cnn', model, test_X, test_y, test_feats, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
+                    # get_results('text/train_ner_bilstm_cnn', model, train_data, y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
+                    get_results('duolingo_text/test_duolingo_bilstm_cnn', model, test_data_feats, test_seq_feats, test_labels, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
                 else:
-                    # get_results('pos_glove_text/train_ner_bilstm_cnn', model, training_data, y, ind, idx_to_tag, word_to_ix, tag_to_ix,char_to_ix, CNN, use_gpu)
+                    # get_results('pos_glove_text/train_ner_bilstm_cnn', model, train_data, y, ind, idx_to_tag, word_to_ix, tag_to_ix,char_to_ix, CNN, use_gpu)
                     # get_results('pos_glove_text/dev_ner_bilstm_cnn', model, dev_X, dev_y, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
-                    get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, test_X, test_y, test_feats, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
+                    get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, test_data_feats, test_seq_feats, test_labels, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
                 print('Elapsed time in epoch: {}'.format(str(timedelta(seconds=int(time.time()-last_time)))))
 
         print('Epoch {} took {}'.format(epoch, str(timedelta(seconds=int(time.time()-last_time)))))
-        #get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, training_data, y, training_feats, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
-        get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, test_X, test_y, test_feats, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
+        #get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, train_data, train_labels, training_feats, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
+        get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, test_data_feats, test_seq_feats, test_labels, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
         last_time = time.time()
 
 if __name__ == '__main__':

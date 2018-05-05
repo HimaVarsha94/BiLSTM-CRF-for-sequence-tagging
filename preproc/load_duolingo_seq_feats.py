@@ -41,7 +41,7 @@ def process_duolingo_seq_feats(train_feats, test_feats):
             if key == 'days':
                 for i,val in enumerate(unique_vals):
                     unique_vals[i] = math.floor(float(val))
-                unique_vals = set(unique_vals)
+                unique_vals = list(set(unique_vals))
                 # print(sorted(list(unique_vals)))
 
                 for i,val in enumerate(train_feats[key]):
@@ -55,10 +55,18 @@ def process_duolingo_seq_feats(train_feats, test_feats):
 
                 print('{} vocab size: {}'.format(key,len(unique_vals)+2))
 
+                with open('../data/duolingo/vocabs_es_en/'+key+'_vocab.pkl', 'wb') as f:
+                    unique_vals.append(len(unique_vals) + 1)
+                    pickle.dump(unique_vals, f)
+
             elif key == 'time':
                 train_feats[key] = build_time_vocab(train_feats[key])
                 test_feats[key] = build_time_vocab(test_feats[key])
                 print('{} vocab size: {}'.format(key,len(list(set(train_feats[key])))+2))
+
+                vocab = [1,2,3,4,5,6,7,8,9,10,11,12]
+                with open('../data/duolingo/vocabs_es_en/'+key+'_vocab.pkl', 'wb') as f:
+                    pickle.dump(vocab, f)
 
             continue
 
@@ -72,6 +80,10 @@ def process_duolingo_seq_feats(train_feats, test_feats):
                 test_feats[key][i] = unique_vals.index(val) + 1
             else:
                 test_feats[key][i] = len(unique_vals) + 1
+
+        with open('../data/duolingo/vocabs_es_en/'+key+'_vocab.pkl', 'wb') as f:
+            unique_vals.append(len(unique_vals) + 1)
+            pickle.dump(unique_vals, f)
 
     return train_feats, test_feats
 
@@ -97,8 +109,9 @@ if __name__ == '__main__':
     print(len(train_feats['countries']))
     print(len(dev_feats['countries']))
 
+    ## change to list of dicts (from dict of vals)
     new_train_feats = [{'user':train_feats['user'][i],'country':train_feats['countries'][i],'days':train_feats['days'][i],'client' :train_feats['client'][i],'session':train_feats['session'][i],'format':train_feats['format'][i],'time':train_feats['time'][i]} for i in range(len(train_feats['countries']))]
-    
+
     new_dev_feats = [{'user':dev_feats['user'][i],'country':dev_feats['countries'][i],'days':dev_feats['days'][i],'client' :dev_feats['client'][i],'session':dev_feats['session'][i],'format':dev_feats['format'][i],'time':dev_feats['time'][i]} for i in range(len(dev_feats['countries']))]
 
     with open('../data/duolingo/procd_es_en_train_seq_feats.pkl', 'wb') as f:

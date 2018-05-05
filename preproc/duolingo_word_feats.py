@@ -1,7 +1,7 @@
 from sklearn.model_selection import train_test_split
 import pickle
 
-DATA_PATH = '../data/duolingo_data/data_es_en/'
+DATA_PATH = '../data/duolingo_orig/data_es_en/'
 
 """ TRAIN """
 X = []
@@ -20,11 +20,11 @@ with open(DATA_PATH + 'es_en.slam.20171218.train', 'r') as f:
             sent = {'words':[], 'pos':[], 'edge_labels':[], 'edge_heads':[], 'chars':[]}
             y=[]
         elif len(tokens) == 7:
-            sent['words'].append(tokens[1].lower())
+            sent['words'].append(tokens[1])
             sent['pos'].append(tokens[2])
             sent['edge_labels'].append(tokens[4])
             sent['edge_heads'].append(tokens[5])
-            sent['chars'].append(list(tokens[1].lower()))
+            sent['chars'].append(list(tokens[1]))
             # sent.append(tokens[1])
             y.append(int(tokens[-1]))
 
@@ -59,11 +59,11 @@ with open(DATA_PATH + 'es_en.slam.20171218.dev', 'r') as f_data:
                 y=[]
             elif len(tokens) == 6:
                 label = int(f_labels.readline().split()[1])
-                sent['words'].append(tokens[1].lower())
+                sent['words'].append(tokens[1])
                 sent['pos'].append(tokens[2])
                 sent['edge_labels'].append(tokens[4])
                 sent['edge_heads'].append(tokens[5])
-                sent['chars'].append(list(tokens[1].lower()))
+                sent['chars'].append(list(tokens[1]))
                 # sent.append(tokens[1])
                 y.append(label)
         X.append(sent)

@@ -9,8 +9,8 @@ torch.manual_seed(1)
 
 class BILSTM_CNN(nn.Module):
 
-    def __init__(self, embedding_dim, hidden_dim, vocab_size, tagset_size, char_size, pretrained_weight_embeddings, tag_to_ix, USE_CRF=False,
-                 BIDIRECTIONAL=False, USE_BIGRAM=False, bigram_size=0, CNN=False, use_gpu=0, duolingo_student=True):
+    def __init__(self, embedding_dim, hidden_dim, vocab_size, tagset_size, char_size, pretrained_weight_embeddings, tag_to_ix, vocab_sizes,
+                USE_CRF=False, BIDIRECTIONAL=False, USE_BIGRAM=False, bigram_size=0, CNN=False, use_gpu=0, duolingo_student=True):
         super(BILSTM_CNN, self).__init__()
         self.char_dim = 25
         self.char_lstm_dim = 25
@@ -29,14 +29,76 @@ class BILSTM_CNN(nn.Module):
 
         if duolingo_student:
             #TODO change the student_id_unique
-            self.student_id_unique = 2593
+            self.student_id_unique = vocab_sizes['user']
+            print('Student id vocab size',self.student_id_unique)
             self.student_id_dim = 100
             self.student_embeds = nn.Embedding(self.student_id_unique, self.student_id_dim)
             b = np.sqrt(3.0 / self.student_embeds.weight.size(1))
             nn.init.uniform_(self.student_embeds.weight, -b, b)
 
+        ### More sequence embeddings
+        ## countries:
+        num_unique = vocab_sizes['country']
+        self.country_dim = 100
+        self.country_embeds = nn.Embedding(num_unique, self.country_dim)
+        b = np.sqrt(3.0 / self.country_embeds.weight.size(1))
+        nn.init.uniform_(self.country_embeds.weight, -b, b)
+        ## days:
+        num_unique = vocab_sizes['days']
+        self.days_dim = 100
+        self.days_embeds = nn.Embedding(num_unique, self.days_dim)
+        b = np.sqrt(3.0 / self.days_embeds.weight.size(1))
+        nn.init.uniform_(self.days_embeds.weight, -b, b)
+        ## client:
+        num_unique = vocab_sizes['client']
+        self.client_dim = 100
+        self.client_embeds = nn.Embedding(num_unique, self.client_dim)
+        b = np.sqrt(3.0 / self.client_embeds.weight.size(1))
+        nn.init.uniform_(self.client_embeds.weight, -b, b)
+        ## session:
+        num_unique = vocab_sizes['session']
+        self.session_dim = 100
+        self.session_embeds = nn.Embedding(num_unique, self.session_dim)
+        b = np.sqrt(3.0 / self.session_embeds.weight.size(1))
+        nn.init.uniform_(self.session_embeds.weight, -b, b)
+        ## format:
+        num_unique = vocab_sizes['format']
+        self.format_dim = 100
+        self.format_embeds = nn.Embedding(num_unique, self.format_dim)
+        b = np.sqrt(3.0 / self.format_embeds.weight.size(1))
+        nn.init.uniform_(self.format_embeds.weight, -b, b)
+        ## time:
+        num_unique = vocab_sizes['time']
+        self.time_dim = 100
+        self.time_embeds = nn.Embedding(num_unique, self.time_dim)
+        b = np.sqrt(3.0 / self.time_embeds.weight.size(1))
+        nn.init.uniform_(self.time_embeds.weight, -b, b)
+
+        seq_feat_dims = self.student_id_dim + self.country_dim + self.days_dim + self.client_dim + self.session_dim + self.format_dim + self.time_dim
+
+        ### Token embeddings
+        ## pos:
+        num_unique = vocab_sizes['pos']
+        self.pos_dim = 100
+        self.pos_embeds = nn.Embedding(num_unique, self.pos_dim)
+        b = np.sqrt(3.0 / self.pos_embeds.weight.size(1))
+        nn.init.uniform_(self.pos_embeds.weight, -b, b)
+        ## edge_labels:
+        num_unique = vocab_sizes['edge_labels']
+        self.edge_labels_dim = 100
+        self.edge_labels_embeds = nn.Embedding(num_unique, self.edge_labels_dim)
+        b = np.sqrt(3.0 / self.edge_labels_embeds.weight.size(1))
+        nn.init.uniform_(self.edge_labels_embeds.weight, -b, b)
+        ## edge_heads:
+        num_unique = vocab_sizes['edge_heads']
+        self.edge_heads_dim = 100
+        self.edge_heads_embeds = nn.Embedding(num_unique, self.edge_heads_dim)
+        b = np.sqrt(3.0 / self.edge_heads_embeds.weight.size(1))
+        nn.init.uniform_(self.edge_heads_embeds.weight, -b, b)
+
+        token_feat_dims = self.pos_dim + self.edge_labels_dim + self.edge_heads_dim
+
         if self.CNN:
-            print("Entered!!!!")
             self.char_embeds = nn.Embedding(char_size, self.char_dim)
             #as given in the paper, initialising
             b = np.sqrt(3.0 / self.char_embeds.weight.size(1))
@@ -50,7 +112,7 @@ class BILSTM_CNN(nn.Module):
             if not duolingo_student:
                 self.lstm = nn.LSTM(embedding_dim + self.char_lstm_dim + self.cap_embedding_dim, hidden_dim, bidirectional=BIDIRECTIONAL)
             else:
-                self.lstm = nn.LSTM(embedding_dim + self.char_lstm_dim + self.cap_embedding_dim + self.student_id_dim, hidden_dim, bidirectional=BIDIRECTIONAL)
+                self.lstm = nn.LSTM(embedding_dim + self.char_lstm_dim + self.cap_embedding_dim + seq_feat_dims + token_feat_dims, hidden_dim, bidirectional=BIDIRECTIONAL)
         else:
             self.lstm = nn.LSTM(embedding_dim + self.char_lstm_dim, hidden_dim)
 
@@ -91,13 +153,24 @@ class BILSTM_CNN(nn.Module):
                 return (autograd.Variable(torch.randn(2, 1, self.hidden_dim )),
                         autograd.Variable(torch.randn(2, 1, self.hidden_dim )))
 
-    def forward_lstm(self, sentence, chars, caps, student_ids, drop_prob):
+    def forward_lstm(self, sentence, chars, caps, feats, drop_prob):
         d = nn.Dropout(p=drop_prob)
         self.hidden = self.init_hidden()
         embeds = self.word_embeddings(sentence)  # shape seq_length * emb_size
         # embeds = self.word_embeddings(sentence)  # shape seq_length * emb_size
         cap_embedding = self.cap_embeds(caps)
-        student_embedding = self.student_embeds(student_ids)
+        ## seq feats
+        student_embedding = self.student_embeds(feats['user'])
+        country_embedding = self.country_embeds(feats['country'])
+        days_embedding = self.days_embeds(feats['days'])
+        client_embedding = self.client_embeds(feats['client'])
+        session_embedding = self.session_embeds(feats['session'])
+        format_embedding = self.format_embeds(feats['format'])
+        time_embedding = self.time_embeds(feats['time'])
+        ## token feats
+        pos_embedding = self.pos_embeds(feats['pos'])
+        edge_labels_embedding = self.edge_labels_embeds(feats['edge_labels'])
+        edge_heads_embedding = self.edge_heads_embeds(feats['edge_heads'])
 
         if self.CNN == True:
             chars_embeds = self.char_embeds(chars).unsqueeze(1)
@@ -107,9 +180,9 @@ class BILSTM_CNN(nn.Module):
                                                  kernel_size=(cnn_output.size(2), 1)).view(cnn_output.size(0), self.char_lstm_dim)
             if self.duolingo_student:
                 if self.use_gpu:
-                    embeds = torch.cat((embeds, chars_embeds, cap_embedding, student_embedding), 1).cuda()
+                    embeds = torch.cat((embeds, chars_embeds, cap_embedding, student_embedding, country_embedding, days_embedding, client_embedding, session_embedding, format_embedding, time_embedding, pos_embedding, edge_labels_embedding, edge_heads_embedding), 1).cuda()
                 else:
-                    embeds = torch.cat((embeds, chars_embeds, cap_embedding, student_embedding), 1)
+                    embeds = torch.cat((embeds, chars_embeds, cap_embedding, student_embedding, country_embedding, days_embedding, client_embedding, session_embedding, format_embedding, time_embedding, pos_embedding, edge_labels_embedding, edge_heads_embedding), 1)
             else:
                 if self.use_gpu:
                     embeds = torch.cat((embeds, chars_embeds, cap_embedding), 1).cuda()
@@ -134,15 +207,15 @@ class BILSTM_CNN(nn.Module):
         return tag_scores
 
 
-    def neg_ll_loss(self, sentence, gold_labels, chars, caps, sid_emb, drop_prob):
-        feats = self.forward_lstm(sentence, chars, caps, sid_emb, drop_prob)
-        return self.crf.neg_ll_loss(sentence, gold_labels, feats)
+    def neg_ll_loss(self, sentence, gold_labels, chars, caps, feats, drop_prob):
+        lstm_feats = self.forward_lstm(sentence, chars, caps, sid_emb, drop_prob)
+        return self.crf.neg_ll_loss(sentence, gold_labels, lstm_feats)
 
-    def forward(self, sentence, chars, caps, sid_emb, drop_prob):
+    def forward(self, sentence, chars, caps, feats, drop_prob):
         # feats = self.forward_lstm(sentence, chars, caps, sid_emb, drop_prob)
         # score, tag_seq = self.crf.forward(sentence, feats)
 
-        scores = self.forward_lstm(sentence, chars, caps, sid_emb, drop_prob)
+        scores = self.forward_lstm(sentence, chars, caps, feats, drop_prob)
 
         # return score, tag_seq
         return scores

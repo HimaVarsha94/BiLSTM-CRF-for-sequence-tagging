@@ -314,7 +314,7 @@ def main():
     parameters = model.parameters()
     # parameters = filter(lambda p: model.requires_grad, model.parameters())
     # optimizer = optim.Adam(parameters, lr=0.001)
-    learning_rate = 0.1
+    learning_rate = 0.01
     optimizer = optim.SGD(parameters, lr=learning_rate)
 
     len_train = len(training_data)

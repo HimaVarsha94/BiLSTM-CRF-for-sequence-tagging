@@ -110,7 +110,7 @@ def get_results(filename, model, test_data_feats, test_seq_feats, test_labels, e
     all_predicted = []
     all_targets= []
 
-# test_data_feats, test_labels, test_feats
+    # test_data_feats, test_labels, test_feats
     len_test = len(test_data_feats)
     print("Testing length", len_test)
     fname = filename + str(epoch) + '.txt'
@@ -176,10 +176,14 @@ def get_results(filename, model, test_data_feats, test_seq_feats, test_labels, e
             else:
                 correct += (predicted == targets.data).sum()
 
+            predicted = predicted.cpu().tolist()
+            pdb.set_trace()
+
             total += targets.size(0)
-            #for tag_ in range(len(sentence)):
-            #    f.write(sentence[tag_] + " " + str(tags[tag_])+" "+str(idx_to_tag[predicted[tag_]])+"\n")
-            #f.write("\n")
+            for tag_ in range(len(sentence)):
+                f.write("{} {} {}\n".format(sentence[tag_],str(tags[tag_]),str(idx_to_tag[predicted[tag_]])))
+            f.write("\n")
+
             del sentence, tags, sentence_in, feats, caps,
             char_in, char_em, prob, predicted
             try:

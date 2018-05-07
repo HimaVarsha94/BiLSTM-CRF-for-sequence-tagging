@@ -10,23 +10,25 @@ import numpy
 
 # In[2]:
 
+import sys
 
-with open('../data/duolingo/procd_es_en_train_allfeats_lowered.pkl', 'rb') as f:
+lang_pair=sys.argv[1]
+with open('../data/duolingo/'+lang_pair+'/procd_'+lang_pair+'_train_allfeats_lowered.pkl', 'rb') as f:
     train_data = pickle.load(f)
 
-with open('../data/duolingo/procd_es_en_dev_allfeats_lowered.pkl', 'rb') as f:
+with open('../data/duolingo/'+lang_pair+'/procd_'+lang_pair+'_dev_allfeats_lowered.pkl', 'rb') as f:
     dev_data = pickle.load(f)
 
-with open('../data/duolingo/procd_es_en_train_labels.pkl', 'rb') as f:
+with open('../data/duolingo/'+lang_pair+'/procd_'+lang_pair+'_train_labels.pkl', 'rb') as f:
     train_labels = pickle.load(f)
 
-with open('../data/duolingo/procd_es_en_dev_labels.pkl', 'rb') as f:
+with open('../data/duolingo/'+lang_pair+'/procd_'+lang_pair+'_dev_labels.pkl', 'rb') as f:
     dev_labels = pickle.load(f)
 
-with open('../data/duolingo/procd_es_en_train_seq_feats.pkl', 'rb') as f:
+with open('../data/duolingo/'+lang_pair+'/procd_'+lang_pair+'_train_seq_feats.pkl', 'rb') as f:
     train_feats = pickle.load(f)
 
-with open('../data/duolingo/procd_es_en_dev_seq_feats.pkl', 'rb') as f:
+with open('../data/duolingo/'+lang_pair+'/procd_'+lang_pair+'_dev_seq_feats.pkl', 'rb') as f:
     dev_feats = pickle.load(f)
 
 
@@ -69,20 +71,20 @@ new_dev_labels = [dev_labels[i] for i in sorted_dev_inds]
 new_train_feats = [train_feats[i] for i in sorted_train_inds]
 new_dev_feats = [dev_feats[i] for i in sorted_dev_inds]
 
-with open('../data/duolingo/ordered_es_en_train_allfeats_lowered.pkl', 'wb') as f:
+with open('../data/duolingo/'+lang_pair+'/ordered_'+lang_pair+'_train_allfeats_lowered.pkl', 'wb') as f:
     train_data = pickle.dump(train_data,f)
 
-with open('../data/duolingo/ordered_es_en_dev_allfeats_lowered.pkl', 'wb') as f:
+with open('../data/duolingo/'+lang_pair+'/ordered_'+lang_pair+'_dev_allfeats_lowered.pkl', 'wb') as f:
     dev_data = pickle.dump(dev_data,f)
 
-with open('../data/duolingo/ordered_es_en_train_labels.pkl', 'wb') as f:
+with open('../data/duolingo/'+lang_pair+'/ordered_'+lang_pair+'_train_labels.pkl', 'wb') as f:
     train_labels = pickle.dump(train_labels,f)
 
-with open('../data/duolingo/ordered_es_en_dev_labels.pkl', 'wb') as f:
+with open('../data/duolingo/'+lang_pair+'/ordered_'+lang_pair+'_dev_labels.pkl', 'wb') as f:
     dev_labels = pickle.dump(dev_labels,f)
 
-with open('../data/duolingo/ordered_es_en_train_seq_feats.pkl', 'wb') as f:
+with open('../data/duolingo/'+lang_pair+'/ordered_'+lang_pair+'_train_seq_feats.pkl', 'wb') as f:
     train_feats = pickle.dump(train_feats,f)
 
-with open('../data/duolingo/ordered_es_en_dev_seq_feats.pkl', 'wb') as f:
+with open('../data/duolingo/'+lang_pair+'/ordered_'+lang_pair+'_dev_seq_feats.pkl', 'wb') as f:
     dev_feats = pickle.dump(dev_feats,f)

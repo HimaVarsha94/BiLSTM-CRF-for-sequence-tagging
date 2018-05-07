@@ -112,6 +112,9 @@ def get_results(filename, model, test_data_feats, test_seq_feats, test_labels, e
     all_predicted = []
     all_targets = []
 
+    with open('./data/duolingo/vocabs_dict.pkl', 'rb') as f:
+        vocabs = pickle.load(f)
+
     # test_data_feats, test_labels, test_feats
     len_test = len(test_data_feats)
     print("Testing length", len_test)
@@ -185,20 +188,20 @@ def get_results(filename, model, test_data_feats, test_seq_feats, test_labels, e
             total += targets.size(0)
 
             string = "{} {} {} {} {} {} {} {} {} {} {} {} {} {}\n"
-            format_args = [sentence[tag_], tags[tag_], idx_to_tag[predicted[tag_]],
-                           prob[tag_],
-                           test_seq_feats[ind]['user'],
-                           test_seq_feats[ind]['country'],
-                           test_seq_feats[ind]['days'],
-                           test_seq_feats[ind]['client'],
-                           test_seq_feats[ind]['session'],
-                           test_seq_feats[ind]['format'],
-                           test_seq_feats[ind]['time'],
-                           test_data_feats[ind]['pos'][tag_],
-                           test_data_feats[ind]['edge_labels'][tag_],
-                           test_data_feats[ind]['edge_heads'][tag_]]
             for tag_ in range(len(sentence)):
-                f.write(to_print.format(*format_args))
+                format_args = [sentence[tag_], tags[tag_], idx_to_tag[predicted[tag_]],
+                               prob[tag_],
+                               vocabs['user'][test_seq_feats[ind]['user']],
+                               vocabs['countries'][test_seq_feats[ind]['country']],
+                               vocabs['days'][test_seq_feats[ind]['days']],
+                               vocabs['client'][test_seq_feats[ind]['client']],
+                               vocabs['session'][test_seq_feats[ind]['session']],
+                               vocabs['format'][test_seq_feats[ind]['format']],
+                               vocabs['time'][test_seq_feats[ind]['time']],
+                               vocabs['pos'][test_data_feats[ind]['pos'][tag_]],
+                               vocabs['edge_label'][test_data_feats[ind]['edge_labels'][tag_]],
+                               vocabs['edge_head'][test_data_feats[ind]['edge_heads'][tag_]]]
+                f.write(string.format(*format_args))
             f.write("\n")
 
             del sentence, tags, sentence_in, feats, caps,
@@ -533,8 +536,8 @@ if __name__ == '__main__':
 
     except(KeyError):
         print('Usage:')
-        print('python duolingo_train.py --gpu 0            # for cpu')
-        print('python duolingo_train.py --gpu 1 --device 2 # for gpu, --device can be omitted')
+        print('python duolingo_train.py --gpu 0 --lr 0.05            # for cpu')
+        print('python duolingo_train.py --gpu 1 --device 2 --lr 0.05 # for gpu, --device can be omitted')
         exit()
 
     main()

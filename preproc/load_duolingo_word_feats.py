@@ -1,8 +1,18 @@
 import pickle
 from collections import Counter, defaultdict
 
+## helper functions
+def save_vocab(key,vals):
+    vocab = {}
+    for i,val in enumerate(vals):
+        vocab[i+1] = val
 
-## helper function
+    vocab[len(vocab)+1] = 'UNK'
+
+    with open('../data/duolingo/vocabs_es_en/'+key+'_vocab.pkl', 'wb') as f:
+        pickle.dump(vocab, f)
+
+
 def replace_with_nums(data, vocab_list, pos_list, edge_label_list, edge_head_list, char_list):
     # max_word = 0
     for feats in data:
@@ -143,6 +153,10 @@ def process_duolingo_word_feats(train, test):
     print('Edge label vocab length', len(edge_label_list) + 2)
     print('Edge head vocab length', len(edge_head_list) + 2)
     print('Character vocab length', len(char_list) + 2)
+
+    save_vocab('pos', pos_list)
+    save_vocab('edge_label', edge_label_list)
+    save_vocab('edge_head', edge_head_list)
 
     train = replace_with_nums(train, vocab_list, pos_list, edge_label_list, edge_head_list, char_list)
     test = replace_with_nums(test, vocab_list, pos_list, edge_label_list, edge_head_list, char_list)

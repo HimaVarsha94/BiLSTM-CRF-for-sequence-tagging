@@ -70,7 +70,7 @@ def process_duolingo_seq_feats(train_feats, test_feats):
                 test_feats[key] = build_time_vocab(test_feats[key])
                 print('{} vocab size: {}'.format(key,len(list(set(train_feats[key])))+2))
 
-                vocab = {1:'<1m', 2:'1-2m', 3:'2-3m', 4:'3-4m', 5:'4-5m', 6:'5-10m', 7:'10-15m',8:'15-20m', 9:'20-25m', 10:'25-30m', 11:'>30m'}
+                vocab = {1:'<1m', 2:'1-2m', 3:'2-3m', 4:'3-4m', 5:'4-5m', 6:'5-10m', 7:'10-15m',8:'15-20m', 9:'20-25m', 10:'25-30m', 11:'>30m', 12:'null'}
                 with open('../data/duolingo/vocabs_es_en/'+key+'_vocab.pkl', 'wb') as f:
                     pickle.dump(vocab, f)
 

@@ -112,7 +112,7 @@ def get_results(filename, model, test_data_feats, test_seq_feats, test_labels, e
     all_predicted = []
     all_targets = []
 
-    with open('./data/duolingo/vocabs_dict.pkl', 'rb') as f:
+    with open('./data/duolingo/' + lang + '_vocabs_dict.pkl', 'rb') as f:
         vocabs = pickle.load(f)
 
     # test_data_feats, test_labels, test_feats
@@ -291,47 +291,28 @@ def compute_auroc(actual, predicted):
 
 def load_duolingo(label):
     if label == 'train':
-        with open('./data/duolingo/procd_es_en_train_allfeats_lowered.pkl', 'rb') as f:
+        with open('./data/duolingo/procd_' + lang + '_train_allfeats_lowered.pkl', 'rb') as f:
             train_data = pickle.load(f)
 
-        with open('./data/duolingo/procd_es_en_train_labels.pkl', 'rb') as f:
+        with open('./data/duolingo/procd_' + lang + '_train_labels.pkl', 'rb') as f:
             train_labels = pickle.load(f)
 
-        with open('./data/duolingo/procd_es_en_train_seq_feats.pkl', 'rb') as f:
+        with open('./data/duolingo/procd_' + lang + '_train_seq_feats.pkl', 'rb') as f:
             train_feats = pickle.load(f)
 
         return train_data, train_feats, train_labels
 
     elif label == 'test' or label == 'dev':
-        with open('./data/duolingo/procd_es_en_dev_allfeats_lowered.pkl', 'rb') as f:
+        with open('./data/duolingo/procd_' + lang + '_dev_allfeats_lowered.pkl', 'rb') as f:
             test_data = pickle.load(f)
 
-        with open('./data/duolingo/procd_es_en_dev_labels.pkl', 'rb') as f:
+        with open('./data/duolingo/procd_' + lang + '_dev_labels.pkl', 'rb') as f:
             test_labels = pickle.load(f)
 
-        with open('./data/duolingo/procd_es_en_dev_seq_feats.pkl', 'rb') as f:
+        with open('./data/duolingo/procd_' + lang + '_dev_seq_feats.pkl', 'rb') as f:
             test_feats = pickle.load(f)
 
         return test_data, test_feats, test_labels
-
-    elif label == 'vocabs':
-        with open('./data/duolingo/vocabs_es_en/client_vocab.pkl', 'rb') as f:
-            client_vocab = pickle.load(f)
-        with open('./data/duolingo/vocabs_es_en/countries_vocab.pkl', 'rb') as f:
-            countries_vocab = pickle.load(f)
-        with open('./data/duolingo/vocabs_es_en/days_vocab.pkl', 'rb') as f:
-            days_vocab = pickle.load(f)
-        with open('./data/duolingo/vocabs_es_en/format_vocab.pkl', 'rb') as f:
-            format_vocab = pickle.load(f)
-        with open('./data/duolingo/vocabs_es_en/session_vocab.pkl', 'rb') as f:
-            session_vocab = pickle.load(f)
-        with open('./data/duolingo/vocabs_es_en/time_vocab.pkl', 'rb') as f:
-            time_vocab = pickle.load(f)
-        with open('./data/duolingo/vocabs_es_en/user_vocab.pkl', 'rb') as f:
-            user_vocab = pickle.load(f)
-
-        return {'client':client_vocab, 'countries':countries_vocab, 'days':days_vocab,
-                'format':format_vocab, 'session':session_vocab, 'time':time_vocab, 'user':user_vocab}
 
 
 def adjust_learning_rate(optimizer, epoch, LR):
@@ -362,16 +343,39 @@ def main():
     char_to_ix = char_dict(train_data)
     tag_to_ix, idx_to_tag = tag_indices(train_data, train_labels, USE_CRF)
 
-    vocab_sizes = {'user': 2645,
-                   'country': 201,
-                   'days': 30,
-                   'client': 4,
-                   'session': 4,
-                   'format': 4,
-                   'time': 14,
-                   'pos': 17,
-                   'edge_labels': 33,
-                   'edge_heads': 16}
+    if lang == 'es_en':
+        vocab_sizes = {'user': 2645,
+                       'country': 201,
+                       'days': 30,
+                       'client': 4,
+                       'session': 4,
+                       'format': 4,
+                       'time': 14,
+                       'pos': 17,
+                       'edge_labels': 33,
+                       'edge_heads': 16}
+    elif lang == 'en_es':
+        vocab_sizes = {'user': 2595,
+                       'country': 66,
+                       'days': 31,
+                       'client': 4,
+                       'session': 4,
+                       'format': 4,
+                       'time': 14,
+                       'pos': 18,
+                       'edge_labels': 43,
+                       'edge_heads': 18}
+    elif lang == 'fr_en':
+        vocab_sizes = {'user': 1215,
+                       'country': 135,
+                       'days': 31,
+                       'client': 4,
+                       'session': 4,
+                       'format': 4,
+                       'time': 14,
+                       'pos': 18,
+                       'edge_labels': 34,
+                       'edge_heads': 17}
 
     if SENNA:
         EMBEDDING_DIM = 50
@@ -511,7 +515,7 @@ def main():
                 else:
                     # get_results('pos_glove_text/train_ner_bilstm_cnn', model, train_data, y, ind, idx_to_tag, word_to_ix, tag_to_ix,char_to_ix, CNN, use_gpu)
                     # get_results('pos_glove_text/dev_ner_bilstm_cnn', model, dev_X, dev_y, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
-                    get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, test_data_feats, test_seq_feats, test_labels, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
+                    get_results('duolingo_glove_text/test_duolingo_bilstm_cnn_'+lang, model, test_data_feats, test_seq_feats, test_labels, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
                 print('Elapsed time in epoch: {}'.format(str(timedelta(seconds=int(time.time()-last_time)))))
 
         print('Epoch {} took {}'.format(epoch, str(timedelta(seconds=int(time.time()-last_time)))))
@@ -533,11 +537,12 @@ if __name__ == '__main__':
             torch.cuda.set_device(int(opts['--device']))
 
         learning_rate = float(opts['--lr'])
+        lang = opts['--lang']
 
     except(KeyError):
         print('Usage:')
-        print('python duolingo_train.py --gpu 0 --lr 0.05            # for cpu')
-        print('python duolingo_train.py --gpu 1 --device 2 --lr 0.05 # for gpu, --device can be omitted')
+        print('python duolingo_train.py --lang en_es --gpu 0 --lr 0.05            # for cpu')
+        print('python duolingo_train.py --lang en_es --gpu 1 --device 2 --lr 0.05 # for gpu, --device can be omitted')
         exit()
 
     main()

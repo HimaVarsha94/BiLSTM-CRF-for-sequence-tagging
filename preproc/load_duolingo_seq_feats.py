@@ -1,6 +1,7 @@
 import pickle
 import math
 from collections import Counter,defaultdict
+from sys import argv
 
 time_splits = [1,2,3,4,5,10,15,20,25,30,math.inf]
 
@@ -20,12 +21,12 @@ def build_time_vocab(time_feats):
 
 def load_duolingo_seq_feats(label):
     if label == 'train':
-        with open('../data/duolingo/es_en_train_seq_feats.pkl', 'rb') as f:
+        with open('../data/duolingo/' + lang + '_train_seq_feats.pkl', 'rb') as f:
             seq_feats = pickle.load(f)
         print("Train data length: "+str(len(seq_feats['countries'])))
 
     elif label == 'test' or label == 'dev':
-        with open('../data/duolingo/es_en_dev_seq_feats.pkl', 'rb') as f:
+        with open('../data/duolingo/' + lang + '_dev_seq_feats.pkl', 'rb') as f:
             seq_feats = pickle.load(f)
         print("Dev data length: "+str(len(seq_feats['countries'])))
 
@@ -62,7 +63,7 @@ def process_duolingo_seq_feats(train_feats, test_feats):
                     vocab[i+1] = val
                 vocab[len(vocab)+1] = 'UNK'
 
-                with open('../data/duolingo/vocabs_es_en/'+key+'_vocab.pkl', 'wb') as f:
+                with open('../data/duolingo/vocabs_' + lang + '/'+key+'_vocab.pkl', 'wb') as f:
                     pickle.dump(vocab, f)
 
             elif key == 'time':
@@ -71,7 +72,7 @@ def process_duolingo_seq_feats(train_feats, test_feats):
                 print('{} vocab size: {}'.format(key,len(list(set(train_feats[key])))+2))
 
                 vocab = {1:'<1m', 2:'1-2m', 3:'2-3m', 4:'3-4m', 5:'4-5m', 6:'5-10m', 7:'10-15m',8:'15-20m', 9:'20-25m', 10:'25-30m', 11:'>30m', 12:'null'}
-                with open('../data/duolingo/vocabs_es_en/'+key+'_vocab.pkl', 'wb') as f:
+                with open('../data/duolingo/vocabs_' + lang + '/'+key+'_vocab.pkl', 'wb') as f:
                     pickle.dump(vocab, f)
 
             continue
@@ -94,13 +95,21 @@ def process_duolingo_seq_feats(train_feats, test_feats):
         if key in ['user', 'countries']:
             vocab[len(vocab)+1] = 'UNK'
 
-        with open('../data/duolingo/vocabs_es_en/'+key+'_vocab.pkl', 'wb') as f:
+        with open('../data/duolingo/vocabs_' + lang + '/'+key+'_vocab.pkl', 'wb') as f:
             pickle.dump(vocab, f)
 
     return train_feats, test_feats
 
 
 if __name__ == '__main__':
+    opts = {}
+    while argv:
+        if argv[0][0] == '-':
+            opts[argv[0]] = argv[1]
+        argv = argv[1:]
+
+    lang = opts['--lang']
+
     train_feats = load_duolingo_seq_feats('train')
     dev_feats = load_duolingo_seq_feats('dev')
     for key in train_feats.keys():
@@ -127,8 +136,8 @@ if __name__ == '__main__':
 
     new_dev_feats = [{'user':dev_feats['user'][i], 'country':dev_feats['countries'][i], 'days':dev_feats['days'][i], 'client':dev_feats['client'][i], 'session':dev_feats['session'][i], 'format':dev_feats['format'][i], 'time':dev_feats['time'][i]} for i in range(len(dev_feats['countries']))]
 
-    with open('../data/duolingo/procd_es_en_train_seq_feats.pkl', 'wb') as f:
+    with open('../data/duolingo/procd_' + lang + '_train_seq_feats.pkl', 'wb') as f:
         pickle.dump(new_train_feats, f)
 
-    with open('../data/duolingo/procd_es_en_dev_seq_feats.pkl', 'wb') as f:
+    with open('../data/duolingo/procd_' + lang + '_dev_seq_feats.pkl', 'wb') as f:
         pickle.dump(new_dev_feats, f)

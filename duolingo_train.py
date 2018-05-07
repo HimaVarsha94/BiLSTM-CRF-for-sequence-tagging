@@ -511,7 +511,7 @@ def main():
                 else:
                     # get_results('pos_glove_text/train_ner_bilstm_cnn', model, train_data, y, ind, idx_to_tag, word_to_ix, tag_to_ix,char_to_ix, CNN, use_gpu)
                     # get_results('pos_glove_text/dev_ner_bilstm_cnn', model, dev_X, dev_y, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
-                    get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, test_data_feats, test_seq_feats, test_labels, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
+                    get_results('duolingo_glove_text/test_duolingo_bilstm_cnn', model, test_data_feats, test_seq_feats, test_labels, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
                 print('Elapsed time in epoch: {}'.format(str(timedelta(seconds=int(time.time()-last_time)))))
 
         print('Epoch {} took {}'.format(epoch, str(timedelta(seconds=int(time.time()-last_time)))))

@@ -1,9 +1,13 @@
-BiLSTM-CRF-for-sequence-tagging
+Second Language Acquisition Modeling on Duolingo Data
 ======
-Implementation of [BiLSTM-CRF for sequence tagging](https://arxiv.org/pdf/1508.01991.pdf)
+BiLSTM (+/-) CNN (+/-) CRF
+Network based on [BiLSTM-CRF for sequence tagging](https://arxiv.org/pdf/1508.01991.pdf)
+
 
 Requirements:
 ======
+    Python 3.6
+
     Pytorch
     numpy
     pickle

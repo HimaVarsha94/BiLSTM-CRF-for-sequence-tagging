@@ -1,7 +1,7 @@
 from sklearn.model_selection import train_test_split
 import pickle
 
-DATA_PATH = '../data/duolingo_data/data_es_en/'
+DATA_PATH = '../data/duolingo_orig/data_es_en/'
 
 """ TRAIN """
 X = []

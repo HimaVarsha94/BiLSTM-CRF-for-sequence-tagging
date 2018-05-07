@@ -183,11 +183,22 @@ def get_results(filename, model, test_data_feats, test_seq_feats, test_labels, e
             # pdb.set_trace()
 
             total += targets.size(0)
+
+            string = "{} {} {} {} {} {} {} {} {} {} {} {} {} {}\n"
+            format_args = [sentence[tag_], tags[tag_], idx_to_tag[predicted[tag_]],
+                           prob[tag_],
+                           test_seq_feats[ind]['user'],
+                           test_seq_feats[ind]['country'],
+                           test_seq_feats[ind]['days'],
+                           test_seq_feats[ind]['client'],
+                           test_seq_feats[ind]['session'],
+                           test_seq_feats[ind]['format'],
+                           test_seq_feats[ind]['time'],
+                           test_data_feats[ind]['pos'][tag_],
+                           test_data_feats[ind]['edge_labels'][tag_],
+                           test_data_feats[ind]['edge_heads'][tag_]]
             for tag_ in range(len(sentence)):
-                f.write("{} {} {} {} {} {} {} {} {} {} {} {} {} {}\n".format(sentence[tag_], tags[tag_], idx_to_tag[predicted[tag_]],
-                                                  prob[tag_], test_seq_feats[ind]['user'], test_seq_feats[ind]['country'], test_seq_feats[ind]['days'], test_seq_feats[ind]['client'], test_seq_feats[ind]['session'],
-                                                  test_seq_feats[ind]['format'], test_seq_feats[ind]['time'],
-                                                  test_data_feats[ind]['pos'][tag_], test_data_feats[ind]['edge_labels'][tag_], test_data_feats[ind]['edge_heads'][tag_]))
+                f.write(to_print.format(*format_args))
             f.write("\n")
 
             del sentence, tags, sentence_in, feats, caps,
@@ -197,13 +208,6 @@ def get_results(filename, model, test_data_feats, test_seq_feats, test_labels, e
             except:
                 pass
 
-    ## Translate sequences into binary labels (0 correct 1 wrong)
-    # gold_labels = torch.cat(all_targets).data - 2
-    # pred_labels = torch.cat(all_predicted) - 2
-
-    ## get actual binary labels for F1
-    # with open('./data/duolingo/dev_binary_labels.pkl', 'rb') as f:
-    #     gold_binary_labels = pickle.load(f)
     print('Len all_predicted: {}'.format(len(all_predicted)))
     print("F1 score is ", compute_f1(all_targets, all_predicted))
     print("Accuracy is ", float(correct)/total)
@@ -339,6 +343,7 @@ def main():
     HIDDEN_DIM = 200
     CNN = False
     SENNA = False
+    DROPOUT = 0.1
     BIDIRECTIONAL = True
     bilstm_crf_cnn_flag = False
 
@@ -438,9 +443,9 @@ def main():
                 # char_in = data['chars']
                 char_em = char_emb(char_in)
                 if use_gpu:
-                    nll = model.neg_ll_loss(sentence_in.cuda(), targets, char_em.cuda(), caps.cuda(), feats, 0.5)
+                    nll = model.neg_ll_loss(sentence_in.cuda(), targets, char_em.cuda(), caps.cuda(), feats, DROPOUT)
                 else:
-                    nll = model.neg_ll_loss(sentence_in, targets, char_em, caps, feats, 0.5)
+                    nll = model.neg_ll_loss(sentence_in, targets, char_em, caps, feats, DROPOUT)
 
                 loss_cal += float(nll.cpu().detach().numpy())
                 nll.backward()
@@ -450,17 +455,17 @@ def main():
                 char_em = char_emb(char_in)
                 if use_gpu:
                     tag_scores = model(sentence_in.cuda(), char_em.cuda(),
-                            caps.cuda(), feats, 0.5)
+                            caps.cuda(), feats, DROPOUT)
                 else:
-                    tag_scores = model(sentence_in, char_em, caps, feats, 0.5)
+                    tag_scores = model(sentence_in, char_em, caps, feats, DROPOUT)
             else:
                 char_in = prepare_words(sentence, char_to_ix)
                 char_em = char_emb(char_in)
                 if use_gpu:
                     tag_scores = model(sentence_in.cuda(), char_em.cuda(),
-                            caps.cuda(), feats, 0.5)
+                            caps.cuda(), feats, DROPOUT)
                 else:
-                    tag_scores = model(sentence_in, char_em, caps, feats, 0.5)
+                    tag_scores = model(sentence_in, char_em, caps, feats, DROPOUT)
 
             if not bilstm_crf_cnn_flag:
                 if use_gpu:

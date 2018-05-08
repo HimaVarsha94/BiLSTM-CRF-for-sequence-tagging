@@ -4,6 +4,8 @@ Implementation of [BiLSTM-CRF for sequence tagging](https://arxiv.org/pdf/1508.0
 
 Requirements:
 ======
+    Python 3.6
+
     Pytorch
     numpy
     pickle
@@ -11,6 +13,8 @@ Requirements:
 
 Usage:
 ======
+NOTE: To run the BLSTM on Duolingo data, switch to the add_feats branch and follow the instructions in the README there.
+
 This command will run the model on a gpu using CUDA, if you would like to run the model without CUDA then in ner_train.py or pos_train.py change the 'use_gpu = 1' line after the imports at the top to 'use_gpu = 0'.
 
 ## NER:

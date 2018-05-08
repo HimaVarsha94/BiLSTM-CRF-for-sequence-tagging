@@ -112,24 +112,24 @@ if __name__ == '__main__':
 
     train_feats = load_duolingo_seq_feats('train')
     dev_feats = load_duolingo_seq_feats('dev')
-    for key in train_feats.keys():
-        print(train_feats[key][0], end=' ')
-    print()
-    for key in dev_feats.keys():
-        print(dev_feats[key][0], end=' ')
-    print()
+    # for key in train_feats.keys():
+    #     print(train_feats[key][0], end=' ')
+    # print()
+    # for key in dev_feats.keys():
+    #     print(dev_feats[key][0], end=' ')
+    # print()
 
     train_feats, dev_feats = process_duolingo_seq_feats(train_feats, dev_feats)
 
-    for key in train_feats.keys():
-        print(train_feats[key][0], end=' ')
-    print()
-    for key in dev_feats.keys():
-        print(dev_feats[key][0], end=' ')
-    print()
-
-    print(len(train_feats['countries']))
-    print(len(dev_feats['countries']))
+    # for key in train_feats.keys():
+    #     print(train_feats[key][0], end=' ')
+    # print()
+    # for key in dev_feats.keys():
+    #     print(dev_feats[key][0], end=' ')
+    # print()
+    #
+    # print(len(train_feats['countries']))
+    # print(len(dev_feats['countries']))
 
     ## change to list of dicts (from dict of vals)
     new_train_feats = [{'user':train_feats['user'][i], 'country':train_feats['countries'][i], 'days':train_feats['days'][i], 'client' :train_feats['client'][i], 'session':train_feats['session'][i], 'format':train_feats['format'][i], 'time':train_feats['time'][i]} for i in range(len(train_feats['countries']))]

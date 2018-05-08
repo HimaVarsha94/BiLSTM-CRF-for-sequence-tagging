@@ -20,7 +20,7 @@ for key in keys:
 # print(vocab_dict['countries'])
 # print(vocab_dict['user'][len(vocab_dict['user'])])
 # print(vocab_dict['user'])
-print(vocab_dict['pos'])
+# print(vocab_dict['pos'])
 
 with open('../data/duolingo/' + lang + '_vocabs_dict.pkl','wb') as f:
     pickle.dump(vocab_dict, f)

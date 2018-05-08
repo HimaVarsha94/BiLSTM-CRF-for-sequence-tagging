@@ -31,7 +31,7 @@ Note: Train (293 unique users) and dev (292) sets have the exact same users exce
 'aZwloMi1', who only appears in train
 """
 
-DATA_PATH = '../data/duolingo_orig/data_' + lang + '/'
+DATA_PATH = '../data/duolingo_data/data_' + lang + '/'
 
 """ TRAIN """
 feats = defaultdict(list)

@@ -13,6 +13,7 @@ Requirements:
     pickle
     sklearn
 
+
 Usage:
 ======
 1. Download the duolingo data from https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/8SWHNO and extract into data/data_duolingo/ (create directory if it doesn't exist)
@@ -25,6 +26,7 @@ OR
 python duolingo_train.py --lang fr_en --gpu 1 --device 2 --lr 0.05 # for gpu, --device can be omitted
 
 Change the flags to run with different language pairs, gpu options, or learning rate
+
 
 Code
 ======

@@ -54,22 +54,22 @@ def get_glove_matrix(data):
             if word not in word_to_ix:
                 word_to_ix[word] = len(word_to_ix)
 
-    with open('./models/duolingo_models/word_to_ix.pkl', 'wb') as f:
-        pickle.dump(word_to_ix, f)
+    # with open('./models/duolingo_models/word_to_ix.pkl', 'wb') as f:
+    #     pickle.dump(word_to_ix, f)
     #this contains a list of all glove obj embeddings
-    with open('./embeddings/glove_obj.pkl', 'rb') as f:
-        glove_obj = pickle.load(f)
+    # with open('./embeddings/glove_obj.pkl', 'rb') as f:
+    #     glove_obj = pickle.load(f)
     #embeddings matrix with each row corresponding to a word to pass to nn.embedding layer
     embeddings_mat = np.zeros((len(word_to_ix), 100))
-
-    for word in word_to_ix:
-        if word in glove_obj:
-            embeddings_mat[word_to_ix[word]] = glove_obj[word]
-        else:
-            embeddings_mat[word_to_ix[word]] = np.random.rand(100)
-
-    with open('./models/duolingo_models/duolingo_matrix', 'wb') as f:
-        pickle.dump(embeddings_mat, f)
+    #
+    # for word in word_to_ix:
+    #     if word in glove_obj:
+    #         embeddings_mat[word_to_ix[word]] = glove_obj[word]
+    #     else:
+    #         embeddings_mat[word_to_ix[word]] = np.random.rand(100)
+    #
+    # with open('./models/duolingo_models/duolingo_matrix', 'wb') as f:
+    #     pickle.dump(embeddings_mat, f)
 
     return embeddings_mat, word_to_ix
 
@@ -106,7 +106,7 @@ def char_emb(chars2):
     return chars2_mask
 
 
-def get_results(filename, model, test_data_feats, test_seq_feats, test_labels, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu):
+def get_results(filename, model, test_data_feats, test_seq_feats, test_labels, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, USE_CRF, use_gpu):
     correct = 0
     total = 0
     all_predicted = []
@@ -334,8 +334,8 @@ def main():
     train_data_feats, train_seq_feats, train_labels = load_duolingo('train')
     test_data_feats, test_seq_feats, test_labels = load_duolingo('dev')
 
-    sid_idx = extract_student_id()
-    training_feats, test_feats = load_features()
+    # sid_idx = extract_student_id()
+    # training_feats, test_feats = load_features()
 
     train_data = [train_data_feats[i]['words'] for i in range(len(train_data_feats))]
     test_data = [test_data_feats[i]['words'] for i in range(len(test_data_feats))]
@@ -381,13 +381,13 @@ def main():
         EMBEDDING_DIM = 50
         emb_mat, word_to_ix = get_embeddings_matrix(train_data)
     else:
-        print("Glove")
+        # print("Glove")
         EMBEDDING_DIM = 100
+        # emb_mat, word_to_ix = get_glove_matrix(train_data)
         emb_mat, word_to_ix = get_glove_matrix(train_data)
 
     if CNN == False and USE_CRF == False:
         print("Bilstm")
-        # model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix))#, emb_mat, USE_CRF, BIDIRECTIONAL=True)
         model = BILSTM_CNN(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix), len(char_to_ix), emb_mat, tag_to_ix, vocab_sizes, USE_CRF=USE_CRF, CNN=CNN, BIDIRECTIONAL=BIDIRECTIONAL, use_gpu=use_gpu, duolingo_student=True)
     if CNN == True and USE_CRF == False:
         print('Using BiLSTM-CNN')
@@ -503,19 +503,19 @@ def main():
                 pass
 
             # if count % 1000 == 0 and ((count > 20000 and epoch==0) or (epoch!=0)):
-            # if count != 0 and count % ((len(indices)-1)//2) == 0:
-            if count != 0 and count % 1 == 0:
+            if count != 0 and count % ((len(indices)-1)//2) == 0:
+            # if count != 0 and count % 1 == 0:
             # if epoch != 0 and count == 0:
                 print('NLL Loss: {}'.format(float(loss_cal)))
                 loss_cal = 0.
                 print('Epoch: {}, Sample: {}'.format(epoch, count))
                 if SENNA:
                     # get_results('text/train_ner_bilstm_cnn', model, train_data, y, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
-                    get_results('duolingo_text/test_duolingo_bilstm_cnn', model, test_data_feats, test_seq_feats, test_labels, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
+                    get_results('duolingo_text/test_duolingo_bilstm_cnn', model, test_data_feats, test_seq_feats, test_labels, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, USE_CRF, use_gpu)
                 else:
                     # get_results('pos_glove_text/train_ner_bilstm_cnn', model, train_data, y, ind, idx_to_tag, word_to_ix, tag_to_ix,char_to_ix, CNN, use_gpu)
                     # get_results('pos_glove_text/dev_ner_bilstm_cnn', model, dev_X, dev_y, ind, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, use_gpu)
-                    get_results('duolingo_glove_text/test_duolingo_bilstm_cnn_'+lang, model, test_data_feats, test_seq_feats, test_labels, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, sid_idx, CNN, USE_CRF, use_gpu)
+                    get_results('duolingo_glove_text/test_duolingo_bilstm_cnn_'+lang, model, test_data_feats, test_seq_feats, test_labels, epoch, idx_to_tag, word_to_ix, tag_to_ix, char_to_ix, CNN, USE_CRF, use_gpu)
                 print('Elapsed time in epoch: {}'.format(str(timedelta(seconds=int(time.time()-last_time)))))
 
         print('Epoch {} took {}'.format(epoch, str(timedelta(seconds=int(time.time()-last_time)))))

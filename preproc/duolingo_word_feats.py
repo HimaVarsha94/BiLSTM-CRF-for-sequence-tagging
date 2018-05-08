@@ -27,8 +27,9 @@ with open(DATA_PATH + lang + '.slam.20171218.train', 'r') as f:
                 X.append(sent)
                 Y.append(y)
             sent = {'words':[], 'pos':[], 'edge_labels':[], 'edge_heads':[], 'chars':[]}
-            y=[]
+            y = []
         elif len(tokens) == 7:
+            sent['timestamp'].append(tokens[0][:-2])
             sent['words'].append(tokens[1])
             sent['pos'].append(tokens[2])
             sent['edge_labels'].append(tokens[4])
@@ -68,6 +69,7 @@ with open(DATA_PATH + lang + '.slam.20171218.dev', 'r') as f_data:
                 y=[]
             elif len(tokens) == 6:
                 label = int(f_labels.readline().split()[1])
+                sent['timestamp'].append(tokens[0][:-2])
                 sent['words'].append(tokens[1])
                 sent['pos'].append(tokens[2])
                 sent['edge_labels'].append(tokens[4])

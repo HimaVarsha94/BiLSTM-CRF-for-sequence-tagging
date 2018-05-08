@@ -124,6 +124,14 @@ def process_duolingo_word_feats(train, test):
         i2t[len(pos_list) + 1] = "OOV"
         pickle.dump(i2t, f)
 
+    timestamp_list = [tup[0] for tup in timestamp_vocab.most_common()]
+    with open('../data/duolingo/timestamp_list.pkl', 'wb') as f:
+        i2t = dict()
+        for ind, token in enumerate(timestamp_list):
+            i2t[ind + 1] = token
+        i2t[len(timestamp_list) + 1] = "OOV"
+        pickle.dump(i2t, f)
+
     edge_label_list = [tup[0] for tup in edge_label_vocab.most_common()]
     with open('../data/duolingo/edge_label_list.pkl', 'wb') as f:
         i2t = dict()

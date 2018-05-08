@@ -1,6 +1,7 @@
 import pickle
 from collections import Counter, defaultdict
-
+import sys
+lang_pair=sys.argv[1]
 
 ## helper functions
 def save_vocab(key,vals):
@@ -57,17 +58,17 @@ def replace_with_nums(data, vocab_list, pos_list, edge_label_list, edge_head_lis
 
 def load_duolingo_word_feats(label):
     if label == 'train':
-        with open('../data/duolingo/es_en_train_allfeats_lowered.pkl', 'rb') as f:
+        with open('../data/duolingo/'+lang_pair+'/'+lang_pair+'_train_allfeats_lowered.pkl', 'rb') as f:
             data = pickle.load(f)
-        print("Train data length: "+str(len(data)))
-        with open('../data/duolingo/es_en_train_labels.pkl', 'rb') as f:
+        print("Train data length: " + str(len(data)))
+        with open('../data/duolingo/'+lang_pair+'/'+lang_pair+'_train_labels.pkl', 'rb') as f:
             data_labels = pickle.load(f)
 
     elif label == 'test' or label == 'dev':
-        with open('../data/duolingo/es_en_dev_allfeats_lowered.pkl', 'rb') as f:
+        with open('../data/duolingo/'+lang_pair+'/'+lang_pair+'_dev_allfeats_lowered.pkl', 'rb') as f:
             data = pickle.load(f)
-        print("Dev data length: "+str(len(data)))
-        with open('../data/duolingo/es_en_dev_labels.pkl', 'rb') as f:
+        print("Dev data length: " + str(len(data)))
+        with open('../data/duolingo/'+lang_pair+'/'+lang_pair+'_dev_labels.pkl', 'rb') as f:
             data_labels = pickle.load(f)
 
     return data, data_labels
@@ -109,7 +110,7 @@ def process_duolingo_word_feats(train, test):
             del (vocab[w])
 
     vocab_list = [tup[0] for tup in vocab.most_common()]
-    with open('../data/duolingo/vocab_list.pkl', 'wb') as f:
+    with open('../data/duolingo/'+lang_pair+'/i2t_words.pkl', 'wb') as f:
         i2t = dict()
         for ind, token in enumerate(vocab_list):
             i2t[ind + 1] = token
@@ -117,7 +118,7 @@ def process_duolingo_word_feats(train, test):
         pickle.dump(i2t, f)
 
     pos_list = [tup[0] for tup in pos_vocab.most_common()]
-    with open('../data/duolingo/pos_list.pkl', 'wb') as f:
+    with open('../data/duolingo/'+lang_pair+'/i2t_pos.pkl', 'wb') as f:
         i2t = dict()
         for ind, token in enumerate(pos_list):
             i2t[ind + 1] = token
@@ -125,7 +126,7 @@ def process_duolingo_word_feats(train, test):
         pickle.dump(i2t, f)
 
     edge_label_list = [tup[0] for tup in edge_label_vocab.most_common()]
-    with open('../data/duolingo/edge_label_list.pkl', 'wb') as f:
+    with open('../data/duolingo/'+lang_pair+'/i2t_edge_labels.pkl', 'wb') as f:
         i2t = dict()
         for ind, token in enumerate(edge_label_list):
             i2t[ind + 1] = token
@@ -133,7 +134,7 @@ def process_duolingo_word_feats(train, test):
         pickle.dump(i2t, f)
 
     char_list = [tup[0] for tup in char_vocab.most_common()]
-    with open('../data/duolingo/char_list.pkl', 'wb') as f:
+    with open('../data/duolingo/'+lang_pair+'/i2t_chars.pkl', 'wb') as f:
         i2t = dict()
         for ind, token in enumerate(char_list):
             i2t[ind + 1] = token
@@ -141,7 +142,7 @@ def process_duolingo_word_feats(train, test):
         pickle.dump(i2t, f)
 
     edge_head_list = [tup[0] for tup in edge_head_vocab.most_common()]
-    with open('../data/duolingo/edge_head_list.pkl', 'wb') as f:
+    with open('../data/duolingo/'+lang_pair+'/i2t_edge_heads.pkl', 'wb') as f:
         i2t = dict()
         for ind, token in enumerate(edge_head_list):
             i2t[ind + 1] = token
@@ -176,14 +177,14 @@ if __name__ == '__main__':
     print(len(train_data))
     print(len(dev_data))
 
-    with open('../data/duolingo/procd_es_en_train_allfeats_lowered.pkl', 'wb') as f:
+    with open('../data/duolingo/'+lang_pair+'/procd_'+lang_pair+'_train_allfeats_lowered.pkl', 'wb') as f:
         pickle.dump(train_data, f)
 
-    with open('../data/duolingo/procd_es_en_train_labels.pkl', 'wb') as f:
+    with open('../data/duolingo/'+lang_pair+'/procd_'+lang_pair+'_train_labels.pkl', 'wb') as f:
         pickle.dump(train_labels, f)
 
-    with open('../data/duolingo/procd_es_en_dev_allfeats_lowered.pkl', 'wb') as f:
+    with open('../data/duolingo/'+lang_pair+'/procd_'+lang_pair+'_dev_allfeats_lowered.pkl', 'wb') as f:
         pickle.dump(dev_data, f)
 
-    with open('../data/duolingo/procd_es_en_dev_labels.pkl', 'wb') as f:
+    with open('../data/duolingo/'+lang_pair+'/procd_'+lang_pair+'_dev_labels.pkl', 'wb') as f:
         pickle.dump(dev_labels, f)

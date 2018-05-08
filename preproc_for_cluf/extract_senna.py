@@ -21,6 +21,7 @@ def senna():
 
 def senna_embeddings_matrix():
 	#made for connll dataset
+	pass
 
 def main():
 	senna()
